@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン | 健康管琁E��プリ</title>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(to bottom right, #a8e6cf, #dcedc1);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: #fff;
+            width: 350px;
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h1 {
+            color: #388e3c;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background-color: #388e3c;
+        }
+
+        #messageBox {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #c62828;
+        }
+
+        .success {
+            color: #2e7d32;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>ログイン</h1>
+        <form id="loginForm">
+            <input type="text" id="login_id" placeholder="ログインID" required>
+            <input type="password" id="password" placeholder="パスワーチE required>
+            <button type="submit">ログイン</button>
+        </form>
+        <div id="messageBox"></div>
+        <p class="message">アカウントがありませんか！E<a href="register.html">新規登録</a></p>
+    </div>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const login_id = document.getElementById("login_id").value;
+            const password = document.getElementById("password").value;
+            const messageBox = document.getElementById("messageBox");
+
+            try {
+                const res = await fetch("/api/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ login_id, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    messageBox.textContent = data.message;
+                    messageBox.className = "success";
+
+                    // ☁E修正�E�login_id めElocalStorage に保孁E
+                    localStorage.setItem("login_id", login_id);
+                    localStorage.setItem("userName", data.name);
+
+                    setTimeout(() => {
+                        if (data.hasProfile === true) {
+                            window.location.href = "home.html";
+                        } else {
+                            window.location.href = "profile_register.html";
+                        }
+                    }, 800);
+
+                } else {
+                    messageBox.textContent = data.message;
+                    messageBox.className = "error";
+                }
+            } catch (err) {
+                messageBox.textContent = "サーバ�Eエラーが発生しました";
+                messageBox.className = "error";
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>繝励Ο繝輔ぅ繝ｼ繝ｫ諠・ｱ | 蛛･蠎ｷ邂｡逅・い繝励Μ</title>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(to bottom right, #a8e6cf, #dcedc1);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            width: 380px;
+            margin: 60px auto;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h1 {
+            color: #388e3c;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #555;
+            font-size: 18px;
+            margin-bottom: 25px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            text-align: left;
+        }
+
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input,
+        select {
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background-color: #388e3c;
+        }
+
+        #messageBox {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .success {
+            color: #2e7d32;
+        }
+
+        .error {
+            color: #c62828;
+        }
+
+        .back {
+            margin-top: 20px;
+            display: inline-block;
+            color: #2e7d32;
+            text-decoration: none;
+        }
+
+        .back:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>諺 蛛･蠎ｷ邂｡逅・い繝励Μ</h1>
+        <h2>繝励Ο繝輔ぅ繝ｼ繝ｫ諠・ｱ</h2>
+
+        <form id="profileForm">
+            <label for="name">蜷榊燕</label>
+            <input type="text" id="name" readonly>
+
+            <label for="age">蟷ｴ鮨｢</label>
+            <input type="number" id="age" min="0">
+
+            <label for="gender">諤ｧ蛻･</label>
+            <select id="gender">
+                <option value="">驕ｸ謚槭＠縺ｦ縺上□縺輔＞</option>
+                <option value="逕ｷ諤ｧ">逕ｷ諤ｧ</option>
+                <option value="螂ｳ諤ｧ">螂ｳ諤ｧ</option>
+                <option value="縺昴・莉・>縺昴・莉・/option>
+            </select>
+
+            <label for="height">霄ｫ髟ｷ・・m・・/label>
+            <input type="number" id="height" step="0.1">
+
+            <label for="weight">迴ｾ蝨ｨ縺ｮ菴馴㍾・・g・・/label>
+            <input type="number" id="weight" step="0.1">
+
+            <label for="target_weight">逶ｮ讓吩ｽ馴㍾・・g・・/label>
+            <input type="number" id="target_weight" step="0.1">
+
+            <button type="submit">譖ｴ譁ｰ縺吶ｋ</button>
+        </form>
+
+        <div id="messageBox"></div>
+        <a href="home.html" class="back">竊・繝帙・繝縺ｫ謌ｻ繧・/a>
+    </div>
+
+    <script>
+        const userName = localStorage.getItem("userName");
+        if (!userName) {
+            alert("繝ｭ繧ｰ繧､繝ｳ諠・ｱ縺後≠繧翫∪縺帙ｓ縲ゅΟ繧ｰ繧､繝ｳ縺礼峩縺励※縺上□縺輔＞縲・);
+            window.location.href = "login.html";
+        }
+
+        const form = document.getElementById("profileForm");
+        const messageBox = document.getElementById("messageBox");
+
+        // 泙 繝励Ο繝輔ぅ繝ｼ繝ｫ諠・ｱ縺ｮ蜿門ｾ・
+        async function loadProfile() {
+            try {
+                const response = await fetch(`/api/profile?userName=${userName}`);
+                const data = await response.json();
+
+                if (response.ok && data.profile) {
+                    const p = data.profile;
+                    document.getElementById("name").value = p.name;
+                    document.getElementById("age").value = p.age;
+                    document.getElementById("gender").value = p.gender;
+                    document.getElementById("height").value = p.height;
+                    document.getElementById("weight").value = p.weight;
+                    document.getElementById("target_weight").value = p.target_weight;
+                } else {
+                    messageBox.textContent = "繝励Ο繝輔ぅ繝ｼ繝ｫ諠・ｱ縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ縲・;
+                    messageBox.className = "error";
+                }
+            } catch (err) {
+                console.error("蜿門ｾ励お繝ｩ繝ｼ:", err);
+                messageBox.textContent = "繧ｵ繝ｼ繝舌・繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺ｾ縺励◆縲・;
+                messageBox.className = "error";
+            }
+        }
+
+        // 泙 譖ｴ譁ｰ蜃ｦ逅・
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const age = document.getElementById("age").value;
+            const gender = document.getElementById("gender").value;
+            const height = document.getElementById("height").value;
+            const weight = document.getElementById("weight").value;
+            const target_weight = document.getElementById("target_weight").value;
+
+            try {
+                const response = await fetch("/api/profile/update", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        userName, age, gender, height, weight, target_weight
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    messageBox.textContent = data.message;
+                    messageBox.className = "success";
+                } else {
+                    messageBox.textContent = data.message;
+                    messageBox.className = "error";
+                }
+            } catch (err) {
+                console.error("譖ｴ譁ｰ繧ｨ繝ｩ繝ｼ:", err);
+                messageBox.textContent = "繧ｵ繝ｼ繝舌・繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺ｾ縺励◆縲・;
+                messageBox.className = "error";
+            }
+        });
+
+        loadProfile();
+    </script>
+</body>
+
+</html>

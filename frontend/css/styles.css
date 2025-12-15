@@ -1,0 +1,98 @@
+/* 全体デザイン */
+body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: linear-gradient(to bottom right, #a8e6cf, #dcedc1);
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+}
+
+/* コンテナ */
+.container {
+    background-color: #fff;
+    width: 350px;
+    margin: 80px auto;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+/* 見出し */
+h1 {
+    color: #388e3c;
+    margin-bottom: 10px;
+}
+
+h2 {
+    color: #555;
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+/* フォーム */
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+label {
+    text-align: left;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input {
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+/* ボタン */
+button {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+button:hover {
+    background-color: #388e3c;
+}
+
+/* メッセージ */
+.message {
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.message a {
+    color: #2e7d32;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.message a:hover {
+    text-decoration: underline;
+}
+
+/* 結果メッセージ */
+#messageBox {
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.success {
+    color: #2e7d32;
+}
+
+.error {
+    color: #c62828;
+}

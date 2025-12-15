@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>プロフィール登録 | 健康管琁E��プリ</title>
+
+    <!-- フォント！Eogin / register と統一�E�E-->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(to bottom right, #c8f3d6, #d9f5c4);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ---- 中央カーチE---- */
+        .container {
+            background-color: #fff;
+            width: 350px;
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h2 {
+            color: #2e7d32;
+            margin-bottom: 25px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #2e7d32;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #43a047;
+        }
+
+        #messageBox {
+            margin-top: 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #2e7d32;
+        }
+
+        .error {
+            color: #d32f2f;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <form id="profileForm">
+            <h2 id="formTitle">プロフィール登録</h2>
+
+            <label for="age">年齢</label>
+            <input type="number" id="age" name="age" min="0" />
+
+            <label for="gender">性別</label>
+            <select id="gender" name="gender">
+                <option value="">選択してください</option>
+                <option value="男性">男性</option>
+                <option value="女性">女性</option>
+                <option value="そ�E仁E>そ�E仁E/option>
+            </select>
+
+            <label for="height">身長 (cm)</label>
+            <input type="number" id="height" name="height" step="0.01" min="0" />
+
+            <label for="weight">体重 (kg)</label>
+            <input type="number" id="weight" name="weight" step="0.01" min="0" />
+
+            <label for="target_weight">目標体重 (kg)</label>
+            <input type="number" id="target_weight" name="target_weight" step="0.01" min="0" />
+
+            <button type="submit" id="submitButton">登録</button>
+
+            <div id="messageBox"></div>
+        </form>
+    </div>
+
+    <script>
+        const apiBase = "";
+        const login_id = localStorage.getItem("login_id");
+        const form = document.getElementById("profileForm");
+        const messageBox = document.getElementById("messageBox");
+        const submitButton = document.getElementById("submitButton");
+        const formTitle = document.getElementById("formTitle");
+
+        if (!login_id) {
+            alert("ログインしてください、E);
+            window.location.href = "login.html";
+        }
+
+        // 既存データ取征E
+        (async () => {
+            try {
+                const res = await fetch(`${apiBase}/api/user-info/${login_id}`);
+                if (res.ok) {
+                    const profile = await res.json();
+
+                    document.getElementById("age").value = profile.age ?? "";
+                    document.getElementById("gender").value = profile.gender ?? "";
+                    document.getElementById("height").value = profile.height ?? "";
+                    document.getElementById("weight").value = profile.weight ?? "";
+                    document.getElementById("target_weight").value = profile.target_weight ?? "";
+
+                    submitButton.textContent = "更新する";
+                    formTitle.textContent = "プロフィール更新";
+                }
+            } catch (err) {
+                console.error("取得エラー:", err);
+            }
+        })();
+
+        // 送信処琁E
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const age = Number(document.getElementById("age").value);
+            const gender = document.getElementById("gender").value;
+            const height = Number(document.getElementById("height").value);
+            const weight = Number(document.getElementById("weight").value);
+            const target_weight = Number(document.getElementById("target_weight").value);
+
+            try {
+                const res = await fetch(`${apiBase}/api/user-info`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        login_id,
+                        age,
+                        gender,
+                        height,
+                        weight,
+                        target_weight
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    messageBox.textContent = data.message;
+                    messageBox.className = "success";
+
+                    setTimeout(() => {
+                        window.location.href = "home.html";
+                    }, 900);
+                } else {
+                    messageBox.textContent = data.message || "エラー";
+                    messageBox.className = "error";
+                }
+            } catch (err) {
+                console.error("送信エラー:", err);
+                messageBox.textContent = "サーバ�Eエラー";
+                messageBox.className = "error";
+            }
+        });
+    </script>
+</body>
+
+</html>

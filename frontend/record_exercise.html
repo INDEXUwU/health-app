@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>運動記録 | 健康管琁E��プリ</title>
+
+    <!-- Chart.js -->
+    <script src="js/chart.umd.min.js"></script>
+
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, #89f7fe, #66a6ff);
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        header {
+            background-color: #fff;
+            padding: 20px;
+            font-size: 22px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        main {
+            margin-top: 40px;
+        }
+
+        input {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #3f51b5;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #283593;
+        }
+
+        .back-btn {
+            margin-top: 20px;
+            background-color: #5c6bc0;
+            font-size: 16px;
+            padding: 12px 20px;
+        }
+
+        .back-btn:hover {
+            background-color: #3f4fa0;
+        }
+
+        table {
+            margin: 40px auto;
+            border-collapse: collapse;
+            width: 80%;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+        }
+
+        th {
+            background: #3f51b5;
+            color: white;
+        }
+
+        .chart-wrap {
+            margin: 40px auto;
+            width: 85%;
+            max-width: 700px;
+        }
+
+        .note {
+            font-size: 12px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>運動記録</header>
+
+    <main>
+        <h2>今日の運動を記録</h2>
+
+        <input type="text" id="exercise_name" placeholder="運動吁E>
+        <input type="number" id="duration" placeholder="時間 (刁E">
+
+        <input type="number" id="calories_burned" placeholder="消費カロリー">
+        <div class="note">※自動計算されますが手動入力も可能でぁE/div>
+
+        <button onclick="saveExercise()">登録</button>
+
+        <h3>最近�E運動記録</h3>
+        <table id="exerciseTable">
+            <tr>
+                <th>日仁E/th>
+                <th>運動吁E/th>
+                <th>時間</th>
+                <th>消費カロリー</th>
+            </tr>
+        </table>
+
+        <!-- カロリーグラチE-->
+        <div class="chart-wrap">
+            <canvas id="exerciseChart"></canvas>
+        </div>
+
+        <button class="back-btn" onclick="location.href='home.html'">ↁEホ�Eムへ戻めE/button>
+
+        <br><br>
+
+    </main>
+
+    <script>
+        const login_id = localStorage.getItem("login_id");
+        let chart = null;
+
+        // --- METs チE�Eタベ�Eス ---
+        const metsTable = {
+            "ウォーキング": 3.5,
+            "散歩": 3.5,
+            "ランニング": 7.0,
+            "ジョギング": 6.0,
+            "サイクリング": 4.0,
+            "自転軁E: 4.0,
+            "水泳": 6.0,
+            "筋トレ": 5.0,
+            "ウェイチE: 5.5,
+            "縁E��び": 7.5,
+            "ヨガ": 2.5,
+            "ストレチE��": 2.3,
+            "階段": 8.0
+        };
+
+        let userWeight = 60; // ☁E��来はAPIから体重を取得する（仮値�E�E
+
+        // --- 自動カロリー計箁E---
+        document.getElementById("exercise_name").addEventListener("input", calculateCalories);
+        document.getElementById("duration").addEventListener("input", calculateCalories);
+
+        function calculateCalories() {
+            const name = document.getElementById("exercise_name").value.trim();
+            const minutes = parseFloat(document.getElementById("duration").value);
+
+            if (!minutes || minutes <= 0) return;
+
+            let mets = null;
+
+            for (const key in metsTable) {
+                if (name.includes(key)) {
+                    mets = metsTable[key];
+                    break;
+                }
+            }
+
+            if (!mets) mets = 3.0;
+
+            const kcal = Math.round(mets * userWeight * (minutes / 60));
+            document.getElementById("calories_burned").value = kcal;
+        }
+
+        // --- 日付表示 日本時間 ---
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString("ja-JP", {
+                timeZone: "Asia/Tokyo",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        // ▼ 保孁E
+        async function saveExercise() {
+            const exercise_name = document.getElementById("exercise_name").value;
+            const duration = document.getElementById("duration").value;
+            const calories_burned = document.getElementById("calories_burned").value;
+
+            const res = await fetch("/api/exercise", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ login_id, exercise_name, duration, calories_burned })
+            });
+
+            const data = await res.json();
+            alert(data.message);
+
+            loadExercises();
+        }
+
+        // ▼ 記録一覧表示
+        async function loadExercises() {
+            const res = await fetch(`/api/exercises/${login_id}`);
+            const exercises = await res.json();
+            const table = document.getElementById("exerciseTable");
+
+            table.innerHTML = `
+                <tr>
+                    <th>日仁E/th>
+                    <th>運動吁E/th>
+                    <th>時間</th>
+                    <th>消費カロリー</th>
+                </tr>
+            `;
+
+            exercises.forEach(e => {
+                table.innerHTML += `
+                    <tr>
+                        <td>${formatDateTime(e.exercise_datetime)}</td>
+                        <td>${e.exercise_name}</td>
+                        <td>${e.duration} 刁E/td>
+                        <td>${e.calories_burned} kcal</td>
+                    </tr>
+                `;
+            });
+
+            loadDailyChart();
+        }
+
+        // ▼ 日別雁E��E
+        async function loadDailyChart() {
+            const res = await fetch(`/api/exercises/daily/${login_id}`);
+            const data = await res.json();
+
+            const labels = data.map(d => d.exercise_date);
+            const total = data.map(d => d.total_calories);
+
+            drawChart(labels, total);
+        }
+
+        function drawChart(labels, total) {
+            const ctx = document.getElementById("exerciseChart").getContext("2d");
+
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "日別消費カロリー (kcal)",
+                        data: total,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        loadExercises();
+    </script>
+
+</body>
+
+</html>

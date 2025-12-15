@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新規登録 | 健康管琁E��プリ</title>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(to bottom right, #a8e6cf, #dcedc1);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: #fff;
+            width: 350px;
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h1 {
+            color: #388e3c;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background-color: #388e3c;
+        }
+
+        .message {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .message a {
+            color: #388e3c;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .message a:hover {
+            text-decoration: underline;
+        }
+
+        #messageBox {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #c62828;
+        }
+
+        .success {
+            color: #2e7d32;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>新規登録</h1>
+        <form id="registerForm">
+            <input type="text" id="name" placeholder="名前" required>
+            <input type="text" id="login_id" placeholder="ログインID" required>
+            <input type="password" id="password" placeholder="パスワーチE required>
+            <button type="submit">登録</button>
+        </form>
+        <div id="messageBox"></div>
+        <p class="message">すでにアカウントをお持ちですか�E�E<a href="login.html">ログイン</a></p>
+    </div>
+
+    <script>
+        document.getElementById("registerForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const name = document.getElementById("name").value;
+            const login_id = document.getElementById("login_id").value;
+            const password = document.getElementById("password").value;
+            const messageBox = document.getElementById("messageBox");
+
+            try {
+                const res = await fetch("/api/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, login_id, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    messageBox.textContent = "登録が完亁E��ました�E��Eロフィール登録へ進みまぁE..";
+                    messageBox.className = "success";
+
+                    // ☁E修正点�E�localStorage のキー名を login_id に統一
+                    localStorage.setItem("userName", name);
+                    localStorage.setItem("login_id", login_id);
+
+                    setTimeout(() => {
+                        window.location.href = "profile_register.html";
+                    }, 1200);
+                } else {
+                    messageBox.textContent = data.message;
+                    messageBox.className = "error";
+                }
+            } catch (err) {
+                messageBox.textContent = "サーバ�Eエラーが発生しました";
+                messageBox.className = "error";
+            }
+        });
+    </script>
+</body>
+
+</html>

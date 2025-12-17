@@ -46,6 +46,39 @@ if (process.env.DATABASE_URL) {
 
 const db = mysql.createPool(dbOptions);
 
+// --- DB初期化 (テーブルがない場合に作成) ---
+const fs = require('fs');
+async function initDB() {
+    try {
+        console.log("DB接続確認中...");
+        // 接続テスト
+        await db.query("SELECT 1");
+
+        // テーブル存在確認
+        const [rows] = await db.query("SHOW TABLES LIKE 'users'");
+        if (rows.length === 0) {
+            console.log("テーブルが存在しません。schema.sql を実行して初期化します...");
+            const schemaPath = path.join(__dirname, 'schema.sql');
+            if (fs.existsSync(schemaPath)) {
+                const schema = fs.readFileSync(schemaPath, 'utf8');
+                // セミコロンで分割して実行
+                const queries = schema.split(';').filter(q => q.trim());
+                for (const query of queries) {
+                    await db.query(query);
+                }
+                console.log("データベースの初期化が完了しました。");
+            } else {
+                console.error("schema.sql が見つかりません。");
+            }
+        }
+    } catch (err) {
+        console.error("DB初期化エラー:", err.message);
+        console.error("★ヒント: 環境変数 DATABASE_URL が正しいMySQLのURLか確認してください。(Postgresなどは不可)");
+    }
+}
+// サーバー起動時に一度だけ実行
+initDB();
+
 // -----------------------------
 // テスト
 // -----------------------------

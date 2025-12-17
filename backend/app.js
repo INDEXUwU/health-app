@@ -80,7 +80,7 @@ app.post("/api/register", async (req, res) => {
         res.json({ message: "登録完了しました" });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "サーバーエラー" });
+        res.status(500).json({ message: "サーバーエラー: " + err.message });
     }
 });
 
@@ -122,7 +122,7 @@ app.post("/api/login", async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "サーバーエラー" });
+        res.status(500).json({ message: "サーバーエラー: " + err.message });
     }
 });
 
@@ -145,7 +145,7 @@ app.get("/api/user-info/:login_id", async (req, res) => {
         res.json(rows[0]);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "サーバーエラー" });
+        res.status(500).json({ message: "サーバーエラー: " + err.message });
     }
 });
 
@@ -177,7 +177,7 @@ app.post("/api/user-info", async (req, res) => {
         res.json({ message: "保存しました" });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "サーバーエラー" });
+        res.status(500).json({ message: "サーバーエラー: " + err.message });
     }
 });
 
@@ -205,7 +205,7 @@ app.post("/api/weight", async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "保存に失敗しました" });
+        res.status(500).json({ message: "保存に失敗しました: " + err.message });
     }
 });
 
@@ -228,7 +228,7 @@ app.get("/api/weights/:login_id", async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "取得に失敗しました" });
+        res.status(500).json({ message: "取得に失敗しました: " + err.message });
     }
 });
 
@@ -252,7 +252,7 @@ app.post("/api/meal", async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "保存に失敗しました" });
+        res.status(500).json({ message: "保存に失敗しました: " + err.message });
     }
 });
 
@@ -275,7 +275,7 @@ app.get("/api/meals/:login_id", async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "取得に失敗しました" });
+        res.status(500).json({ message: "取得に失敗しました: " + err.message });
     }
 });
 
@@ -301,7 +301,7 @@ app.get("/api/meals/daily/:login_id", async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "集計に失敗しました" });
+        res.status(500).json({ message: "集計に失敗しました: " + err.message });
     }
 });
 
@@ -325,7 +325,7 @@ app.post("/api/exercise", async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "保存に失敗しました" });
+        res.status(500).json({ message: "保存に失敗しました: " + err.message });
     }
 });
 
@@ -348,7 +348,7 @@ app.get("/api/exercises/:login_id", async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "取得に失敗しました" });
+        res.status(500).json({ message: "取得に失敗しました: " + err.message });
     }
 });
 
@@ -374,7 +374,7 @@ app.get("/api/exercises/daily/:login_id", async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "取得に失敗しました" });
+        res.status(500).json({ message: "取得に失敗しました: " + err.message });
     }
 });
 
@@ -427,7 +427,7 @@ app.get("/api/totals/:login_id", async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "取得に失敗しました" });
+        res.status(500).json({ message: "取得に失敗しました: " + err.message });
     }
 });
 
@@ -533,7 +533,7 @@ app.get("/api/advice/:login_id", async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "アドバイスの生成に失敗しました" });
+        res.status(500).json({ message: "アドバイスの生成に失敗しました: " + err.message });
     }
 });
 

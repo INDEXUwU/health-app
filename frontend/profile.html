@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>プロフィール惁E�� | 健康管琁E��プリ</title>
+    <title>プロフィール情報｜健康管理Webサイト</title>
     <style>
         body {
             font-family: 'Noto Sans JP', sans-serif;
@@ -100,8 +100,8 @@
 
 <body>
     <div class="container">
-        <h1>🌿 健康管琁E��プリ</h1>
-        <h2>プロフィール惁E��</h2>
+        <h1>健康管理アプリ</h1>
+        <h2>プロフィール情報</h2>
 
         <form id="profileForm">
             <label for="name">名前</label>
@@ -115,36 +115,36 @@
                 <option value="">選択してください</option>
                 <option value="男性">男性</option>
                 <option value="女性">女性</option>
-                <option value="そ�E仁E>そ�E仁E/option>
+                <option value="その他">その他</option>
             </select>
 
-            <label for="height">身長�E�Em�E�E/label>
+            <label for="height">身長(cm)</label>
             <input type="number" id="height" step="0.1">
 
-            <label for="weight">現在の体重�E�Eg�E�E/label>
+            <label for="weight">体重(kg)</label>
             <input type="number" id="weight" step="0.1">
 
-            <label for="target_weight">目標体重�E�Eg�E�E/label>
+            <label for="target_weight">目標体重(kg)</label>
             <input type="number" id="target_weight" step="0.1">
 
             <button type="submit">更新する</button>
         </form>
 
         <div id="messageBox"></div>
-        <a href="home.html" class="back">ↁEホ�Eムに戻めE/a>
+        <a href="home.html" class="back">ホームに戻る</a>
     </div>
 
     <script>
         const userName = localStorage.getItem("userName");
         if (!userName) {
-            alert("ログイン惁E��がありません。ログインし直してください、E);
+            alert("ログイン情報がありません。ログインし直してください。");
             window.location.href = "login.html";
         }
 
         const form = document.getElementById("profileForm");
         const messageBox = document.getElementById("messageBox");
 
-        // 🟢 プロフィール惁E��の取征E
+        // 泙 繝励Ο繝輔ぅ繝ｼ繝ｫ諠・�ｱ縺ｮ蜿門ｾ・
         async function loadProfile() {
             try {
                 const response = await fetch(`/api/profile?userName=${userName}`);
@@ -159,17 +159,17 @@
                     document.getElementById("weight").value = p.weight;
                     document.getElementById("target_weight").value = p.target_weight;
                 } else {
-                    messageBox.textContent = "プロフィール惁E��が見つかりません、E;
+                    messageBox.textContent = "プロフィール情報が見つかりません。";
                     messageBox.className = "error";
                 }
             } catch (err) {
                 console.error("取得エラー:", err);
-                messageBox.textContent = "サーバ�Eエラーが発生しました、E;
+                messageBox.textContent = "サーバーエラーが発生しました。";
                 messageBox.className = "error";
             }
         }
 
-        // 🟢 更新処琁E
+        // 泙 譖ｴ譁ｰ蜃ｦ逅・
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
@@ -199,7 +199,7 @@
                 }
             } catch (err) {
                 console.error("更新エラー:", err);
-                messageBox.textContent = "サーバ�Eエラーが発生しました、E;
+                messageBox.textContent = "サーバーエラーが発生しました。";
                 messageBox.className = "error";
             }
         });

@@ -2,132 +2,51 @@
 <html lang="ja">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>体重記録 | 健康管琁E��プリ</title>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>体重記録｜健康管理アプリ</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- Shared -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js -->
     <script src="js/chart.umd.min.js" defer></script>
-
-    <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background: linear-gradient(to bottom right, #a8e6cf, #dcedc1);
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-        }
-
-        header {
-            background-color: #4caf50;
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        .container {
-            max-width: 500px;
-            margin: 25px auto;
-            background-color: white;
-            padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-        }
-
-        label {
-            color: #388e3c;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            margin: 10px 0 20px;
-            font-size: 15px;
-        }
-
-        .save-btn {
-            width: 100%;
-            padding: 12px;
-            background-color: #4caf50;
-            color: white;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
-        }
-
-        .save-btn:hover {
-            background-color: #43a047;
-        }
-
-        .back-btn {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            background-color: #66bb6a;
-            color: white;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .back-btn:hover {
-            background-color: #57a65e;
-        }
-
-        #message {
-            margin-top: 15px;
-            color: #388e3c;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .chart-wrap {
-            margin: 30px auto;
-            max-width: 650px;
-            padding: 20px;
-        }
-    </style>
 </head>
 
 <body>
-    <header>体重記録</header>
+    <script src="js/components.js"></script>
+    <script>renderHeader("体重記録");</script>
 
-    <div class="container">
-        <label>今日の体重�E�Eg�E�E/label>
-        <input type="number" id="weightInput" step="0.1" placeholder="例！E2.5" />
+    <div class="container fade-in">
+        <div class="mb-2 text-center">
+            <h1>体重を記録</h1>
+            <p class="text-muted">日々の変化をチェックしましょう</p>
+        </div>
 
-        <button class="save-btn" id="saveBtn">記録する</button>
-        <button class="back-btn" onclick="location.href='home.html'">ホ�Eムへ戻めE/button>
+        <div class="card" style="max-width:600px; margin:0 auto;">
+            <div class="form-group">
+                <label for="weightInput">今日の体重 (kg)</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="number" id="weightInput" step="0.1" placeholder="00.0" style="flex:1;">
+                    <button id="saveBtn" class="btn" style="flex:0 0 auto;">記録</button>
+                </div>
+            </div>
 
-        <div id="message"></div>
+            <div class="mt-2">
+                <h3>推移グラフ</h3>
+                <div style="position: relative; height:300px; width:100%;">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="chart-wrap">
-        <canvas id="weightChart"></canvas>
-    </div>
-
-    <script defer>
+    <script>
         document.addEventListener("DOMContentLoaded", () => {
-
-            // ここを修正�E�最重要E��E
             const login_id = localStorage.getItem("login_id");
-
-            if (!login_id) {
-                alert("ログイン惁E��がありません。ログインしてください、E);
-                location.href = "login.html";
-                return;
-            }
-
-            const weightInput = document.getElementById("weightInput");
-            const saveBtn = document.getElementById("saveBtn");
-            const message = document.getElementById("message");
             const ctx = document.getElementById("weightChart").getContext("2d");
             let chart = null;
 
@@ -136,45 +55,50 @@
                     const res = await fetch(`/api/weights/${login_id}`);
                     const data = await res.json();
 
-                    const labels = data.map(d => String(d.record_date).split("T")[0]);
+                    // Simplify dates
+                    const labels = data.map(d => {
+                        const date = new Date(d.record_date);
+                        return `${date.getMonth() + 1}/${date.getDate()}`;
+                    });
                     const weights = data.map(d => d.weight);
 
                     drawChart(labels, weights);
                 } catch (err) {
-                    console.error("読み込みエラー:", err);
+                    console.error(err);
                 }
             }
 
             function drawChart(labels, data) {
                 if (chart) chart.destroy();
-
                 chart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels,
                         datasets: [{
-                            label: '体重の推移�E�Eg�E�E,
+                            label: '体重 (kg)',
                             data,
                             borderColor: "#4caf50",
+                            backgroundColor: "rgba(76, 175, 80, 0.1)",
                             borderWidth: 3,
-                            fill: false,
-                            tension: 0.2,
-                            pointRadius: 6,
-                            pointHoverRadius: 8,
-                            pointBackgroundColor: "#66bb6a",
-                            pointBorderColor: "#388e3c",
-                            pointBorderWidth: 2
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: "#fff",
+                            pointBorderColor: "#4caf50"
                         }]
                     },
                     options: {
-                        responsive: true
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: false } } // Auto scale better for weight
                     }
                 });
             }
 
-            saveBtn.addEventListener("click", async () => {
-                const weight = weightInput.value;
-                if (!weight) return alert("体重を�E力してください");
+            document.getElementById("saveBtn").addEventListener("click", async () => {
+                const weight = document.getElementById("weightInput").value;
+                if (!weight) return Toast.show("数値を入力してください", "error");
 
                 try {
                     const res = await fetch("/api/weight", {
@@ -182,17 +106,15 @@
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ login_id, weight: Number(weight) })
                     });
-
                     if (res.ok) {
-                        message.textContent = "体重を記録しました�E�E;
-                        weightInput.value = "";
+                        Toast.show("記録しました", "success");
+                        document.getElementById("weightInput").value = "";
                         loadWeightData();
                     } else {
-                        message.textContent = "保存に失敗しました、E;
+                        Toast.show("記録に失敗しました", "error");
                     }
                 } catch (err) {
-                    console.error(err);
-                    message.textContent = "保存に失敗しました、E;
+                    Toast.show("エラーが発生しました", "error");
                 }
             });
 

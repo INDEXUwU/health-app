@@ -2,201 +2,143 @@
 <html lang="ja">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>プロフィール登録 | 健康管琁E��プリ</title>
-
-    <!-- フォント！Eogin / register と統一�E�E-->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プロフィール登録｜健康管理アプリ</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- Shared Style -->
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background: linear-gradient(to bottom right, #c8f3d6, #d9f5c4);
-            margin: 0;
-            padding: 0;
+        .auth-container {
             min-height: 100vh;
-
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
-        /* ---- 中央カーチE---- */
-        .container {
-            background-color: #fff;
-            width: 350px;
-            padding: 40px 30px;
-            border-radius: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        .auth-card {
+            width: 100%;
+            max-width: 500px;
+            /* Slightly wider */
             text-align: center;
         }
 
-        h2 {
-            color: #2e7d32;
-            margin-bottom: 25px;
-            font-size: 24px;
-            font-weight: bold;
+        .form-row {
+            display: flex;
+            gap: 15px;
         }
 
-        label {
-            display: block;
-            text-align: left;
-            margin-bottom: 5px;
-            font-size: 14px;
-            color: #2e7d32;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 15px;
-            box-sizing: border-box;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background-color: #43a047;
-        }
-
-        #messageBox {
-            margin-top: 15px;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .success {
-            color: #2e7d32;
-        }
-
-        .error {
-            color: #d32f2f;
+        .form-row .form-group {
+            flex: 1;
         }
     </style>
 </head>
 
 <body>
+    <div class="auth-container">
+        <div class="card auth-card fade-in">
+            <div class="mb-2">
+                <h1>プロフィール設定</h1>
+                <p class="text-muted">あなたに合ったアドバイスのために<br>情報を入力してください</p>
+            </div>
 
-    <div class="container">
-        <form id="profileForm">
-            <h2 id="formTitle">プロフィール登録</h2>
+            <form id="profileForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="age">年齢</label>
+                        <input type="number" id="age" placeholder="25" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">性別</label>
+                        <select id="gender" required>
+                            <option value="">選択</option>
+                            <option value="male">男性</option>
+                            <option value="female">女性</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                </div>
 
-            <label for="age">年齢</label>
-            <input type="number" id="age" name="age" min="0" />
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="height">身長 (cm)</label>
+                        <input type="number" id="height" step="0.1" placeholder="170.5" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="weight">現在の体重 (kg)</label>
+                        <input type="number" id="weight" step="0.1" placeholder="60.0" required>
+                    </div>
+                </div>
 
-            <label for="gender">性別</label>
-            <select id="gender" name="gender">
-                <option value="">選択してください</option>
-                <option value="男性">男性</option>
-                <option value="女性">女性</option>
-                <option value="そ�E仁E>そ�E仁E/option>
-            </select>
+                <div class="form-group">
+                    <label for="target_weight" style="color: var(--primary-dark);">目標体重 (kg)</label>
+                    <input type="number" id="target_weight" step="0.1" placeholder="58.0" required
+                        style="background: #e8f5e9; border-color: var(--primary);">
+                </div>
 
-            <label for="height">身長 (cm)</label>
-            <input type="number" id="height" name="height" step="0.01" min="0" />
-
-            <label for="weight">体重 (kg)</label>
-            <input type="number" id="weight" name="weight" step="0.01" min="0" />
-
-            <label for="target_weight">目標体重 (kg)</label>
-            <input type="number" id="target_weight" name="target_weight" step="0.01" min="0" />
-
-            <button type="submit" id="submitButton">登録</button>
-
-            <div id="messageBox"></div>
-        </form>
+                <button type="submit" class="btn btn-block mt-2">設定を保存して開始</button>
+            </form>
+        </div>
     </div>
 
+    <!-- Shared Components -->
+    <script src="js/components.js"></script>
     <script>
-        const apiBase = "";
+        // Check if coming from register
         const login_id = localStorage.getItem("login_id");
-        const form = document.getElementById("profileForm");
-        const messageBox = document.getElementById("messageBox");
-        const submitButton = document.getElementById("submitButton");
-        const formTitle = document.getElementById("formTitle");
-
         if (!login_id) {
-            alert("ログインしてください、E);
             window.location.href = "login.html";
         }
 
-        // 既存データ取征E
-        (async () => {
-            try {
-                const res = await fetch(`${apiBase}/api/user-info/${login_id}`);
-                if (res.ok) {
-                    const profile = await res.json();
+        document.getElementById("profileForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
 
-                    document.getElementById("age").value = profile.age ?? "";
-                    document.getElementById("gender").value = profile.gender ?? "";
-                    document.getElementById("height").value = profile.height ?? "";
-                    document.getElementById("weight").value = profile.weight ?? "";
-                    document.getElementById("target_weight").value = profile.target_weight ?? "";
-
-                    submitButton.textContent = "更新する";
-                    formTitle.textContent = "プロフィール更新";
-                }
-            } catch (err) {
-                console.error("取得エラー:", err);
-            }
-        })();
-
-        // 送信処琁E
-        form.addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            const age = Number(document.getElementById("age").value);
+            const age = document.getElementById("age").value;
             const gender = document.getElementById("gender").value;
-            const height = Number(document.getElementById("height").value);
-            const weight = Number(document.getElementById("weight").value);
-            const target_weight = Number(document.getElementById("target_weight").value);
+            const height = document.getElementById("height").value;
+            const weight = document.getElementById("weight").value;
+            const target_weight = document.getElementById("target_weight").value;
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = "保存中...";
 
             try {
-                const res = await fetch(`${apiBase}/api/user-info`, {
+                // 1. Save Profile
+                const res = await fetch("/api/user-info", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        login_id,
-                        age,
-                        gender,
-                        height,
-                        weight,
-                        target_weight
+                        login_id, age, gender, height, weight, target_weight
                     })
                 });
 
-                const data = await res.json();
+                if (!res.ok) throw new Error("Profile update failed");
 
-                if (res.ok) {
-                    messageBox.textContent = data.message;
-                    messageBox.className = "success";
+                // 2. Also register initial weight to weight_records
+                await fetch("/api/weight", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ login_id, weight })
+                });
 
-                    setTimeout(() => {
-                        window.location.href = "home.html";
-                    }, 900);
-                } else {
-                    messageBox.textContent = data.message || "エラー";
-                    messageBox.className = "error";
-                }
+                Toast.show("設定が完了しました！", "success");
+
+                setTimeout(() => {
+                    window.location.href = "home.html";
+                }, 1000);
+
             } catch (err) {
-                console.error("送信エラー:", err);
-                messageBox.textContent = "サーバ�Eエラー";
-                messageBox.className = "error";
+                console.error(err);
+                Toast.show("エラーが発生しました", "error");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "設定を保存して開始";
             }
         });
     </script>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>履歴・グラフ｜健康管理アプリ</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- Shared -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js -->
+    <script src="js/chart.umd.min.js" defer></script>
+</head>
+
+<body>
+    <script src="js/components.js"></script>
+    <script>renderHeader("履歴・グラフ");</script>
+
+    <div class="container fade-in">
+        <div class="mb-2 text-center">
+            <h1>健康記録グラフ</h1>
+            <p class="text-muted">あなたの頑張りを可視化します</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Weight Chart -->
+            <div class="card">
+                <h3>⚖️ 体重の推移</h3>
+                <div style="position:relative; height:300px; width:100%;">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Calories Chart -->
+            <div class="card">
+                <h3>🔥 摂取 vs 消費 カロリー</h3>
+                <div style="position:relative; height:300px; width:100%;">
+                    <canvas id="calorieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const login_id = localStorage.getItem("login_id");
+            if (!login_id) return;
+
+            loadWeightChart();
+            loadCalorieChart();
+
+            // --- Weight Chart ---
+            async function loadWeightChart() {
+                try {
+                    const res = await fetch(`/api/weights/${login_id}`);
+                    const data = await res.json();
+
+                    const labels = data.map(d => new Date(d.record_date).toLocaleDateString());
+                    const values = data.map(d => d.weight);
+
+                    const ctx = document.getElementById("weightChart").getContext("2d");
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels,
+                            datasets: [{
+                                label: '体重 (kg)',
+                                data: values,
+                                borderColor: '#4CAF50',
+                                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                fill: true,
+                                tension: 0.3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                        }
+                    });
+                } catch (e) { console.error(e); }
+            }
+
+            // --- Calorie Chart (Combo) ---
+            async function loadCalorieChart() {
+                try {
+                    // Fetch both meals and exercises
+                    const [mRes, eRes] = await Promise.all([
+                        fetch(`/api/meals/daily/${login_id}`),
+                        fetch(`/api/exercises/daily/${login_id}`)
+                    ]);
+                    const mData = await mRes.json(); // { meal_date, total_calories }
+                    const eData = await eRes.json(); // { exercise_date, total_calories }
+
+                    // Merge dates
+                    const allDates = new Set([
+                        ...mData.map(d => d.meal_date.split('T')[0]),
+                        ...eData.map(d => d.exercise_date.split('T')[0])
+                    ]);
+                    const sortedDates = Array.from(allDates).sort();
+
+                    // Map data to dates
+                    const intakes = sortedDates.map(date => {
+                        const rec = mData.find(d => d.meal_date.startsWith(date));
+                        return rec ? rec.total_calories : 0;
+                    });
+                    const burns = sortedDates.map(date => {
+                        const rec = eData.find(d => d.exercise_date.startsWith(date));
+                        return rec ? rec.total_calories : 0;
+                    });
+
+                    // Format dates for display
+                    const labels = sortedDates.map(d => new Date(d).toLocaleDateString());
+
+                    const ctx = document.getElementById("calorieChart").getContext("2d");
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels,
+                            datasets: [
+                                {
+                                    label: '摂取 (kcal)',
+                                    data: intakes,
+                                    backgroundColor: '#FF7043',
+                                },
+                                {
+                                    label: '消費 (kcal)',
+                                    data: burns,
+                                    backgroundColor: '#42A5F5',
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                        }
+                    });
+
+                } catch (e) { console.error(e); }
+            }
+        });
+    </script>
+</body>
+
+</html>

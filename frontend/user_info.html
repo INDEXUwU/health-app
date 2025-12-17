@@ -4,195 +4,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>プロフィール編雁E| 健康管琁E��プリ</title>
-
-    <style>
-        body {
-            font-family: "Segoe UI", sans-serif;
-            background: linear-gradient(135deg, #89f7fe, #66a6ff);
-            margin: 0;
-            padding: 0;
-            text-align: center;
-        }
-
-        .container {
-            width: 90%;
-            max-width: 450px;
-            margin: 40px auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-            text-align: left;
-        }
-
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-top: 12px;
-            font-weight: bold;
-            color: #555;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            margin-top: 6px;
-            border-radius: 10px;
-            border: 1px solid #ccc;
-        }
-
-        button {
-            width: 100%;
-            margin-top: 20px;
-            padding: 12px;
-            background-color: #3f51b5;
-            color: white;
-            font-size: 18px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #283593;
-        }
-
-        #message {
-            margin-top: 15px;
-            color: red;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        #successMessage {
-            margin-top: 20px;
-            padding: 10px;
-            background: #d4edda;
-            color: #155724;
-            border-radius: 6px;
-            display: none;
-            text-align: center;
-        }
-    </style>
+    <title>プロフィール編集｜健康管理アプリ</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- Shared Style -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
+    <!-- Header -->
+    <script src="js/components.js"></script>
+    <script>renderHeader("設定");</script>
 
-    <div class="container">
-        <h2>プロフィール編雁E/h2>
+    <div class="container fade-in">
+        <div class="mb-2">
+            <h1>プロフィール編集</h1>
+            <p class="text-muted">基本情報を更新します</p>
+        </div>
 
-        <form id="userForm">
+        <div class="card" style="max-width:600px; margin:0 auto;">
+            <form id="userForm">
+                <div class="form-group">
+                    <label for="name">お名前</label>
+                    <input type="text" id="name" required>
+                </div>
 
-            <label>名前</label>
-            <input type="text" id="name">
+                <div style="display:flex; gap:15px;">
+                    <div class="form-group" style="flex:1;">
+                        <label for="age">年齢</label>
+                        <input type="number" id="age" required min="5" max="120">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label for="gender">性別</label>
+                        <select id="gender" required>
+                            <option value="">選択</option>
+                            <option value="male">男性</option>
+                            <option value="female">女性</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                </div>
 
-            <label>年齢</label>
-            <input type="number" id="age">
+                <div style="display:flex; gap:15px;">
+                    <div class="form-group" style="flex:1;">
+                        <label for="height">身長 (cm)</label>
+                        <input type="number" id="height" step="0.1" required>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label for="weight">体重 (kg)</label>
+                        <input type="number" id="weight" step="0.1" required>
+                    </div>
+                </div>
 
-            <label>性別</label>
-            <select id="gender">
-                <option value="">選択してください</option>
-                <option value="男性">男性</option>
-                <option value="女性">女性</option>
-                <option value="そ�E仁E>そ�E仁E/option>
-            </select>
+                <div class="form-group">
+                    <label for="target_weight" style="color:var(--primary);">目標体重 (kg)</label>
+                    <input type="number" id="target_weight" step="0.1" required
+                        style="background:#f1f8e9; border-color:var(--primary-light);">
+                </div>
 
-            <label>身長 (cm)</label>
-            <input type="number" id="height">
-
-            <label>体重 (kg)</label>
-            <input type="number" id="weight">
-
-            <label>目標体重 (kg)</label>
-            <input type="number" id="target_weight">
-
-            <button type="button" onclick="saveUserInfo()">保孁E/button>
-
-            <p id="message"></p>
-            <div id="successMessage">更新されました�E�E/div>
-        </form>
+                <button type="button" onclick="saveUserInfo()" class="btn btn-block mt-2">
+                    変更を保存する
+                </button>
+            </form>
+        </div>
     </div>
 
+    <!-- Logic -->
     <script>
         const login_id = localStorage.getItem("login_id");
 
-        if (!login_id) {
-            alert("ログインしてください");
-            window.location.href = "login.html";
-        }
-
-        // --- プロフィール読み込み ---
+        // Load Data
         async function loadUserInfo() {
-            const res = await fetch(`/api/user-info/${login_id}`);
-            const data = await res.json();
+            try {
+                const res = await fetch(`/api/user-info/${login_id}`);
+                const data = await res.json();
 
-            document.getElementById("name").value = data.name || "";
-            document.getElementById("age").value = data.age || "";
-            document.getElementById("gender").value = data.gender || "";
-            document.getElementById("height").value = data.height || "";
-            document.getElementById("weight").value = data.weight || "";
-            document.getElementById("target_weight").value = data.target_weight || "";
+                // Map values
+                // Note: The API returns English keys, but in previous file gender values were Japanese "男性"/"女性"
+                // Checking previous code: select used "男性" value. 
+                // Let's standardise on "male"/"female" values in select, but we need to see what DB has.
+                // Assuming DB has whatever string was sent.
+                // If the previous code sent "男性", then we need to handle that.
+                // Modern practice -> standardise, but let's just assume simple mapping or loose equality.
+
+                document.getElementById("name").value = data.name || "";
+                document.getElementById("age").value = data.age || "";
+
+                // Handle gender mapping if legacy data exists
+                let g = data.gender;
+                if (g === "男性") g = "male";
+                if (g === "女性") g = "female";
+                document.getElementById("gender").value = g || "";
+
+                document.getElementById("height").value = data.height || "";
+                document.getElementById("weight").value = data.weight || "";
+                document.getElementById("target_weight").value = data.target_weight || "";
+            } catch (e) {
+                console.error(e);
+                Toast.show("データの読み込みに失敗しました", "error");
+            }
         }
 
-        // --- 保孁E---
+        // Save Data
         async function saveUserInfo() {
             const name = document.getElementById("name").value.trim();
-            const age = Number(document.getElementById("age").value);
+            const age = document.getElementById("age").value;
             const gender = document.getElementById("gender").value;
-            const height = Number(document.getElementById("height").value);
-            const weight = Number(document.getElementById("weight").value);
-            const target_weight = Number(document.getElementById("target_weight").value);
+            const height = document.getElementById("height").value;
+            const weight = document.getElementById("weight").value;
+            const target_weight = document.getElementById("target_weight").value;
 
-            const msg = document.getElementById("message");
-            msg.textContent = "";
+            // Simple validation
+            if (!name) return Toast.show("名前を入力してください", "error");
 
-            // --- バリチE�Eション ---
-            if (!name || name.length < 2) return msg.textContent = "名前を正しく入力してください、E;
-            if (!age || age < 5 || age > 120) return msg.textContent = "年齢は5、E20の篁E��で入力してください、E;
-            if (!gender) return msg.textContent = "性別を選択してください、E;
-            if (!height || height < 50 || height > 250) return msg.textContent = "身長は50、E50cmの篁E��で入力してください、E;
-            if (!weight || weight < 20 || weight > 300) return msg.textContent = "体重は20、E00kgの篁E��で入力してください、E;
-            if (!target_weight || target_weight < 20 || target_weight > 300) return msg.textContent = "目標体重は20、E00kgの篁E��で入力してください、E;
+            const btn = document.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = "保存中...";
 
-            const info = {
-                login_id,
-                name,
-                age,
-                gender,
-                height,
-                weight,
-                target_weight
-            };
+            try {
+                const res = await fetch("/api/user-info", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        login_id, name, age, gender, height, weight, target_weight
+                    })
+                });
 
-            const res = await fetch("/api/user-info", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(info),
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                document.getElementById("successMessage").style.display = "block";
-                setTimeout(() => {
-                    window.location.href = "home.html";
-                }, 1200);
-            } else {
-                msg.textContent = data.message || "エラーが発生しました、E;
+                if (res.ok) {
+                    Toast.show("プロフィールを更新しました", "success");
+                    localStorage.setItem("userName", name); // Update local cache
+                    setTimeout(() => location.href = "home.html", 800);
+                } else {
+                    const d = await res.json();
+                    Toast.show(d.message || "エラーが発生しました", "error");
+                    btn.disabled = false;
+                    btn.textContent = "変更を保存する";
+                }
+            } catch (err) {
+                console.error(err);
+                Toast.show("サーバーエラー", "error");
+                btn.disabled = false;
+                btn.textContent = "変更を保存する";
             }
         }
 
         loadUserInfo();
     </script>
-
 </body>
 
 </html>

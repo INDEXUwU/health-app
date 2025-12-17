@@ -4,110 +4,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>新規登録 | 健康管琁E��プリ</title>
+    <title>新規登録｜健康管理アプリ</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- Shared Style -->
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background: linear-gradient(to bottom right, #a8e6cf, #dcedc1);
-            margin: 0;
-            padding: 0;
-            height: 100vh;
+        .auth-container {
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
-        .container {
-            background-color: #fff;
-            width: 350px;
-            padding: 40px 30px;
-            border-radius: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
             text-align: center;
-        }
-
-        h1 {
-            color: #388e3c;
-            margin-bottom: 25px;
-            font-size: 24px;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        button {
-            width: 100%;
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        button:hover {
-            background-color: #388e3c;
-        }
-
-        .message {
-            margin-top: 15px;
-            font-size: 14px;
-        }
-
-        .message a {
-            color: #388e3c;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .message a:hover {
-            text-decoration: underline;
-        }
-
-        #messageBox {
-            margin-top: 15px;
-            font-size: 14px;
-        }
-
-        .error {
-            color: #c62828;
-        }
-
-        .success {
-            color: #2e7d32;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1>新規登録</h1>
-        <form id="registerForm">
-            <input type="text" id="name" placeholder="名前" required>
-            <input type="text" id="login_id" placeholder="ログインID" required>
-            <input type="password" id="password" placeholder="パスワーチE required>
-            <button type="submit">登録</button>
-        </form>
-        <div id="messageBox"></div>
-        <p class="message">すでにアカウントをお持ちですか�E�E<a href="login.html">ログイン</a></p>
+    <div class="auth-container">
+        <div class="card auth-card fade-in">
+            <div class="mb-2">
+                <h1>新規登録</h1>
+                <p class="text-muted">アカウントを作成します</p>
+            </div>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="name">お名前</label>
+                    <input type="text" id="name" placeholder="山田 太郎" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="login_id">ログインID</label>
+                    <input type="text" id="login_id" placeholder="半角英数字" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">パスワード</label>
+                    <input type="password" id="password" placeholder="8文字以上推奨" required>
+                </div>
+
+                <button type="submit" class="btn btn-block mt-1">登録して次へ</button>
+            </form>
+
+            <div class="mt-2" style="font-size: 0.9rem;">
+                <p>既にアカウントをお持ちですか？</p>
+                <a href="login.html" style="color: var(--primary); font-weight:600;">ログインはこちら</a>
+            </div>
+        </div>
     </div>
 
+    <!-- Shared Components -->
+    <script src="js/components.js"></script>
     <script>
         document.getElementById("registerForm").addEventListener("submit", async function (event) {
             event.preventDefault();
 
-            const name = document.getElementById("name").value;
-            const login_id = document.getElementById("login_id").value;
+            const name = document.getElementById("name").value.trim();
+            const login_id = document.getElementById("login_id").value.trim();
             const password = document.getElementById("password").value;
-            const messageBox = document.getElementById("messageBox");
+            const submitBtn = this.querySelector('button[type="submit"]');
+
+            if (login_id.length < 3) {
+                Toast.show("IDは3文字以上にしてください", "error");
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "登録中...";
 
             try {
                 const res = await fetch("/api/register", {
@@ -119,10 +93,8 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    messageBox.textContent = "登録が完亁E��ました�E��Eロフィール登録へ進みまぁE..";
-                    messageBox.className = "success";
+                    Toast.show("登録完了！プロフィール設定へ進みます", "success");
 
-                    // ☁E修正点�E�localStorage のキー名を login_id に統一
                     localStorage.setItem("userName", name);
                     localStorage.setItem("login_id", login_id);
 
@@ -130,12 +102,15 @@
                         window.location.href = "profile_register.html";
                     }, 1200);
                 } else {
-                    messageBox.textContent = data.message;
-                    messageBox.className = "error";
+                    Toast.show(data.message || "登録に失敗しました", "error");
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "登録して次へ";
                 }
             } catch (err) {
-                messageBox.textContent = "サーバ�Eエラーが発生しました";
-                messageBox.className = "error";
+                console.error(err);
+                Toast.show("サーバーエラーが発生しました", "error");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "登録して次へ";
             }
         });
     </script>

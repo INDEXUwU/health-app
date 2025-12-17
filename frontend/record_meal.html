@@ -1,282 +1,188 @@
+<!DOCTYPE html>
 <html lang="ja">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>食事記録 | 健康管琁E��プリ</title>
-
-    <!-- Chart.js 読み込み -->
-    <script src="js/chart.umd.min.js" defer=""></script>
-
+    <title>食事記録｜健康管理アプリ</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- Shared -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js -->
+    <script src="js/chart.umd.min.js" defer></script>
     <style>
-        body {
-            font-family: "Segoe UI", sans-serif;
-            background: linear-gradient(135deg, #f6d365, #fda085);
-            margin: 0;
-            padding: 0;
-            text-align: center;
-        }
-
-        header {
-            background-color: #fff;
-            padding: 20px;
-            font-size: 22px;
-            font-weight: bold;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        main {
-            margin-top: 40px;
-        }
-
-        input {
-            margin: 10px;
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
-
-        button {
-            background-color: #ff7b54;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background-color: #ff5722;
-        }
-
-        .back-btn {
-            margin-top: 20px;
-            background-color: #ffa726;
-            font-size: 16px;
-            padding: 12px 20px;
-        }
-
-        .back-btn:hover {
-            background-color: #fb8c00;
-        }
-
+        /* Simple table styles */
         table {
-            margin: 40px auto;
+            width: 100%;
             border-collapse: collapse;
-            width: 80%;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
+            font-size: 0.9rem;
         }
 
         th,
         td {
-            border: 1px solid #ddd;
-            padding: 12px;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
         }
 
         th {
-            background: #ff7b54;
-            color: white;
-        }
-
-        .chart-wrap {
-            margin: 40px auto;
-            width: 85%;
-            max-width: 700px;
-        }
-
-        /* ▼ 自動カロリー計算�E説明文 */
-        .auto-info {
-            font-size: 14px;
-            color: #fff;
-            margin-top: -10px;
-            opacity: 0.9;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.8rem;
         }
     </style>
 </head>
 
 <body>
+    <script src="js/components.js"></script>
+    <script>renderHeader("食事記録");</script>
 
-    <header>食事記録</header>
-
-    <main>
-        <h2>今日の食事を記録</h2>
-
-        <input type="text" id="meal_name" placeholder="料理吁E oninput="autoCalcCalories()">
-        <input type="number" id="calories" placeholder="カロリー (kcal)">
-        <div class="auto-info">🍽�E�E料理名を入力すると自動でカロリーを推定しまぁE/div>
-
-        <button onclick="saveMeal()">登録</button>
-
-        <h3>最近�E食事記録</h3>
-        <table id="mealTable">
-            <tbody>
-                <tr>
-                    <th>日仁E/th>
-                    <th>料理吁E/th>
-                    <th>カロリー</th>
-                </tr>
-            </tbody>
-        </table>
-
-        <div class="chart-wrap">
-            <canvas id="mealChart"></canvas>
+    <div class="container fade-in">
+        <div class="mb-2 text-center">
+            <h1>食事を記録</h1>
+            <p class="text-muted">食べたものを入力してください</p>
         </div>
 
-        <button class="back-btn" onclick="location.href='home.html'">ↁEホ�Eムへ戻めE/button>
+        <div class="dashboard-grid">
+            <!-- Record Form -->
+            <div class="card">
+                <div class="form-group">
+                    <label>料理名 (入力で自動推定)</label>
+                    <input type="text" id="meal_name" placeholder="カレーライス" oninput="autoCalcCalories()">
+                </div>
+                <div class="form-group">
+                    <label>カロリー (kcal)</label>
+                    <input type="number" id="calories" placeholder="--">
+                </div>
+                <button onclick="saveMeal()" class="btn btn-block">記録する</button>
+            </div>
 
-        <br><br>
+            <!-- Chart -->
+            <div class="card">
+                <h3>最近のカロリー摂取量</h3>
+                <div style="position:relative; height:200px; width:100%;">
+                    <canvas id="mealChart"></canvas>
+                </div>
+            </div>
+        </div>
 
-    </main>
+        <!-- History Table -->
+        <div class="card mt-2">
+            <h3>最近の記録</h3>
+            <div style="overflow-x:auto;">
+                <table id="mealTable">
+                    <thead>
+                        <tr>
+                            <th>日時</th>
+                            <th>料理名</th>
+                            <th>カロリー</th>
+                        </tr>
+                    </thead>
+                    <tbody><!-- Dynamic --></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <script>
         const login_id = localStorage.getItem("login_id");
         let chart = null;
 
-        // ▼ 日本時間に変換してフォーマッチE
-        function formatDateTime(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleString("ja-JP", {
-                timeZone: "Asia/Tokyo",
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit"
-            });
-        }
-
-        /* ===========================================
-           🍽�E�E自動カロリー推定データ�E�簡易辞書�E�E
-        =========================================== */
+        // Auto Calc Helper
         const calorieDB = {
-            "カレー": 700,
-            "カレーライス": 850,
-            "ラーメン": 550,
-            "味噌ラーメン": 600,
-            "醤油ラーメン": 480,
-            "チャーハン": 650,
-            "サラダ": 120,
-            "サンドイチE��": 300,
-            "牛丼": 900,
-            "寿司": 450,
-            "天ぷめE: 500,
-            "オムライス": 700,
-            "パスタ": 600,
-            "ピザ": 700,
-            "トンカチE: 800,
-            "からあげ": 450
+            "カレー": 700, "ラーメン": 550, "チャーハン": 650, "サラダ": 120,
+            "サンドイッチ": 300, "牛丼": 900, "寿司": 450, "パスタ": 600,
+            "ピザ": 700, "トンカツ": 800, "からあげ": 450, "ご飯": 168, "パン": 260
         };
 
-        /* ===========================================
-           🍳 料理吁EↁEカロリー自動�E力機�E
-        =========================================== */
         function autoCalcCalories() {
             const name = document.getElementById("meal_name").value.trim();
+            if (!name) return;
 
-            if (name === "") return;
-
-            // 完�E一致 ↁE登録カロリー
-            if (calorieDB[name]) {
-                document.getElementById("calories").value = calorieDB[name];
-                return;
-            }
-
-            // 部刁E��致�E�例：味噌ラーメン ↁEラーメン�E�E
+            // Exact or partial match
             for (const key in calorieDB) {
                 if (name.includes(key)) {
                     document.getElementById("calories").value = calorieDB[key];
                     return;
                 }
             }
-
-            // 何も一致しなぁEↁE平坁E��
-            document.getElementById("calories").value = 300;
         }
 
-        // 食事�E保孁E
         async function saveMeal() {
             const meal_name = document.getElementById("meal_name").value;
             const calories = document.getElementById("calories").value;
 
-            const res = await fetch("/api/meal", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ login_id, meal_name, calories })
-            });
+            if (!meal_name || !calories) return Toast.show("入力してください", "error");
 
-            const data = await res.json();
-            alert(data.message);
+            try {
+                const res = await fetch("/api/meal", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ login_id, meal_name, calories })
+                });
 
-            document.getElementById("meal_name").value = "";
-            document.getElementById("calories").value = "";
-
-            loadMeals();
+                if (res.ok) {
+                    Toast.show("記録しました", "success");
+                    document.getElementById("meal_name").value = "";
+                    document.getElementById("calories").value = "";
+                    loadMeals();
+                }
+            } catch (e) { console.error(e); }
         }
 
-        // 食事一覧表示
         async function loadMeals() {
-            const res = await fetch(`/api/meals/${login_id}`);
-            const meals = await res.json();
+            try {
+                // Table
+                const res = await fetch(`/api/meals/${login_id}`);
+                const meals = await res.json();
+                const tbody = document.querySelector("#mealTable tbody");
+                tbody.innerHTML = meals.slice(0, 10).map(m => `
+                    <tr>
+                        <td>${new Date(m.meal_datetime).toLocaleDateString()} ${new Date(m.meal_datetime).getHours()}:${String(new Date(m.meal_datetime).getMinutes()).padStart(2, '0')}</td>
+                        <td>${m.meal_name}</td>
+                        <td>${m.calories} kcal</td>
+                    </tr>
+                `).join('');
 
-            const table = document.getElementById("mealTable");
-            table.innerHTML = "<tr><th>日仁E/th><th>料理吁E/th><th>カロリー</th></tr>";
+                // Chart
+                const cRes = await fetch(`/api/meals/daily/${login_id}`);
+                const cData = await cRes.json();
 
-            meals.forEach(m => {
-                table.innerHTML += `
-                <tr>
-                    <td>${formatDateTime(m.meal_datetime)}</td>
-                    <td>${m.meal_name}</td>
-                    <td>${m.calories} kcal</td>
-                </tr>`;
-            });
+                // Last 7 days
+                const recent = cData.slice(-7);
+                drawChart(recent.map(d => new Date(d.meal_date).getDate() + '日'), recent.map(d => d.total_calories));
 
-            loadDailyChart();
+            } catch (e) { console.error(e); }
         }
 
-        // ▼ 日別カロリー雁E��EPI
-        async function loadDailyChart() {
-            const res = await fetch(`/api/meals/daily/${login_id}`);
-            const data = await res.json();
-
-            const labels = data.map(d => d.meal_date);
-            const calories = data.map(d => d.total_calories);
-
-            drawChart(labels, calories);
-        }
-
-        // グラフ描画
-        function drawChart(labels, calories) {
+        function drawChart(labels, data) {
             const ctx = document.getElementById("mealChart").getContext("2d");
-
             if (chart) chart.destroy();
-
             chart = new Chart(ctx, {
-                type: "bar",
+                type: 'bar',
                 data: {
-                    labels: labels,
+                    labels,
                     datasets: [{
-                        label: "日別カロリー合訁E(kcal)",
-                        data: calories,
-                        borderWidth: 2
+                        label: '摂取kcal',
+                        data,
+                        backgroundColor: '#FF7043',
+                        borderRadius: 4
                     }]
                 },
                 options: {
                     responsive: true,
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
                 }
             });
         }
 
         loadMeals();
     </script>
-
-
 </body>
 
 </html>

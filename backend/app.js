@@ -9,20 +9,42 @@ app.use(cors());
 app.use(express.json());
 
 const path = require("path");
-app.use(express.static(path.join(__dirname, "../frontend")));
+app.use(express.static(path.join(__dirname, "../frontend"), {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+        }
+    }
+}));
 
 // --- DB 接続設定（環境に合わせて） ---
-const db = mysql.createPool({
-    host: process.env.DB_HOST || "localhost",
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "AdminDef",
-    database: process.env.DB_NAME || "health_app",
-    port: process.env.DB_PORT || 3306,
+// --- DB 接続設定（環境に合わせて） ---
+let dbOptions = {
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0,
-    ssl: process.env.DB_SSL ? { rejectUnauthorized: false } : undefined // クラウドDB接続用（SSLが必要な場合）
-});
+    queueLimit: 0
+};
+
+if (process.env.DATABASE_URL) {
+    // Render/Aivenなどの接続URL（mysql://...）を分解して設定
+    const dbUrl = new URL(process.env.DATABASE_URL);
+    dbOptions.host = dbUrl.hostname;
+    dbOptions.port = dbUrl.port;
+    dbOptions.user = dbUrl.username;
+    dbOptions.password = dbUrl.password;
+    dbOptions.database = dbUrl.pathname.slice(1);
+    dbOptions.ssl = { rejectUnauthorized: false };
+} else {
+    // ローカル開発用
+    dbOptions.host = process.env.DB_HOST || "localhost";
+    dbOptions.user = process.env.DB_USER || "root";
+    dbOptions.password = process.env.DB_PASSWORD || "AdminDef";
+    dbOptions.database = process.env.DB_NAME || "health_app";
+    dbOptions.port = process.env.DB_PORT || 3306;
+    dbOptions.ssl = process.env.DB_SSL ? { rejectUnauthorized: false } : undefined;
+}
+
+const db = mysql.createPool(dbOptions);
 
 // -----------------------------
 // テスト

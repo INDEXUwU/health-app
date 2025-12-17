@@ -2,290 +2,264 @@
 <html lang="ja">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>ホ�Eム | 健康管琁E��プリ</title>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ホーム｜健康管理アプリ</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- Shared Style -->
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background: linear-gradient(to bottom right, #a8e6cf, #dcedc1);
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
+        .dashboard-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: 1fr;
         }
 
-        header {
-            background-color: #4caf50;
-            color: white;
-            padding: 15px 20px;
-            font-size: 22px;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            letter-spacing: 1px;
+        @media (min-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 2fr 1fr;
+            }
         }
 
-        .header-btns {
-            display: flex;
-            gap: 10px;
-        }
-
-        .header-btn {
-            background: rgba(255, 255, 255, 0.25);
-            border: 1px solid #fff;
-            color: #fff;
-            padding: 8px 14px;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .header-btn:hover {
-            background: rgba(255, 255, 255, 0.45);
-        }
-
-        .content {
-            max-width: 1200px;
-            margin: 24px auto;
-            padding: 16px;
-        }
-
-        /* レイアウトを調整 */
-        .top-row {
-            display: flex;
-            gap: 28px;
-            align-items: flex-start;
-            flex-wrap: wrap;
-        }
-
-        /* アドバイスカード（拡大版！E*/
         .advice-card {
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-            padding: 26px;
-            width: 480px;
-            max-height: 600px;
-            display: flex;
-            flex-direction: column;
+            background: linear-gradient(135deg, #ffffff 0%, #f1f8e9 100%);
+            border: 2px solid #e8f5e9;
         }
 
-        .advice-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 22px;
-            color: #2e7d32;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-
-        .progress {
-            height: 14px;
-            background: #eee;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-
-        .progress>.bar {
-            height: 100%;
-            background: linear-gradient(90deg, #66bb6a, #4caf50);
-            width: 0%;
-        }
-
-        .small {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .stats {
-            margin-top: 18px;
+        .stat-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 15px;
+            margin-top: 15px;
         }
 
         .stat-box {
-            background: #f7fdf7;
-            border-radius: 10px;
-            padding: 12px;
+            background: white;
+            padding: 15px;
+            border-radius: var(--radius-sm);
             text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
-        .advice-list {
-            margin-top: 18px;
-            overflow: auto;
-            font-size: 15px;
-            line-height: 1.6;
-            padding-right: 4px;
+        .stat-val {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary-dark);
         }
 
-        /* 機�EカーチE- 新レイアウチE*/
-        .cards {
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .progress-container {
+            margin: 15px 0;
+            background: #eee;
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 0;
+            transition: width 1s ease;
+        }
+
+        .action-cards {
             display: grid;
-            grid-template-columns: repeat(2, minmax(220px, 1fr));
-            gap: 18px;
-            width: 100%;
-            max-width: 520px;
+            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         }
 
-        .card {
-            background: #fff;
-            border-radius: 14px;
-            padding: 22px;
-            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
-            height: 170px;
+        .action-card {
+            background: white;
+            padding: 20px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: var(--shadow-sm);
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            height: 140px;
         }
 
-        .btn {
-            background: #1976d2;
-            color: #fff;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            width: 100%;
+        .action-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
         }
 
-        .btn:hover {
-            opacity: 0.9;
+        .action-icon {
+            font-size: 2.5rem;
         }
 
-        footer {
-            text-align: center;
-            color: #555;
-            padding: 18px;
-            font-size: 14px;
-            margin-top: 28px;
+        .action-title {
+            font-weight: 600;
+            color: var(--text-main);
         }
     </style>
 </head>
 
 <body>
+    <!-- Header rendered by js/components.js -->
 
-    <header id="headerTitle">
-        健康管琁E��プリ ホ�Eム
-        <div class="header-btns">
-            <button class="header-btn" onclick="location.href='user_info.html'">プロフィール編雁E/button>
-            <button class="header-btn" onclick="logout()">ログアウチE/button>
+    <div class="container fade-in">
+        <div class="mb-2">
+            <h1><span id="userName">ユーザー</span>さん、こんにちは！</h1>
+            <p class="text-muted">今日も健康的な一日を過ごしましょう</p>
         </div>
-    </header>
 
-    <div class="content">
-        <div class="top-row">
+        <div class="dashboard-grid">
+            <!-- Left Column: Advice & Stats -->
+            <div class="main-column">
+                <!-- Advice Card -->
+                <div class="card advice-card">
+                    <h2>🌱 今日のアドバイス</h2>
+                    <div id="loadingAdvice">データを分析中...</div>
 
-            <!-- アドバイスカーチE-->
-            <div class="advice-card" id="adviceCard">
-                <div class="advice-title"> 今日のアドバイス</div>
+                    <div id="adviceContent" style="display:none;">
+                        <div class="stat-grid">
+                            <div class="stat-box">
+                                <div class="stat-label">今日の摂取</div>
+                                <div class="stat-val" id="valIntake">-- kcal</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">今日の消費</div>
+                                <div class="stat-val" id="valBurn">-- kcal</div>
+                            </div>
+                        </div>
 
-                <div id="weightSummary" class="small">読み込み中...</div>
+                        <div class="mt-2">
+                            <p class="text-muted" style="font-size:0.9rem;">目標体重まで</p>
+                            <div class="progress-container">
+                                <div class="progress-bar" id="progressBar"></div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                                <span id="currentWeight">Current: -- kg</span>
+                                <span id="targetWeight">Target: -- kg</span>
+                            </div>
+                        </div>
 
-                <div class="progress">
-                    <div class="bar" id="progressBar"></div>
-                </div>
-
-                <div class="stats">
-                    <div class="stat-box">
-                        <div class="small">今日の摂取</div>
-                        <div id="todayIntake" style="font-weight:bold">-- kcal</div>
+                        <div class="mt-2" style="background: rgba(255,255,255,0.6); padding:15px; border-radius:8px;">
+                            <ul id="adviceList" style="font-size:0.95rem; line-height:1.8;">
+                                <!-- AI Advice Text -->
+                            </ul>
+                        </div>
                     </div>
-                    <div class="stat-box">
-                        <div class="small">今日の消費</div>
-                        <div id="todayBurn" style="font-weight:bold">-- kcal</div>
-                    </div>
                 </div>
-
-                <div class="advice-list" id="adviceList">読み込み中...</div>
             </div>
 
-            <!-- 機�Eカード（整列版�E�E-->
-            <div class="cards">
-
-                <div class="card">
-                    <h3>体重推移</h3>
-                    <p class="small">体重の推移を確認できまぁE/p>
-                    <button class="btn" onclick="location.href='record_weight.html'">体重記録へ</button>
+            <!-- Right Column: Quick Actions -->
+            <div class="side-column">
+                <h2>クイックアクション</h2>
+                <div class="action-cards mt-1">
+                    <a href="record_meal.html" class="action-card">
+                        <span class="action-icon">🍽️</span>
+                        <span class="action-title">食事を記録</span>
+                    </a>
+                    <a href="record_exercise.html" class="action-card">
+                        <span class="action-icon">🏃</span>
+                        <span class="action-title">運動を記録</span>
+                    </a>
+                    <a href="record_weight.html" class="action-card">
+                        <span class="action-icon">⚖️</span>
+                        <span class="action-title">体重を記録</span>
+                    </a>
+                    <a href="history.html" class="action-card">
+                        <span class="action-icon">📊</span>
+                        <span class="action-title">履歴・グラフ</span>
+                    </a>
                 </div>
-
-                <div class="card">
-                    <h3>食事記録</h3>
-                    <p class="small">食事を登録してカロリー管琁E/p>
-                    <button class="btn" onclick="location.href='record_meal.html'">食事記録へ</button>
-                </div>
-
-                <div class="card">
-                    <h3>運動記録</h3>
-                    <p class="small">運動を登録して消費を記録</p>
-                    <button class="btn" onclick="location.href='record_exercise.html'">運動記録へ</button>
-                </div>
-
             </div>
         </div>
     </div>
 
-    <footer>健康管琁EebサイチE| 日、E�E積み重�Eが大刁E/footer>
-
+    <!-- Components -->
+    <script src="js/components.js"></script>
     <script>
-        // ログイン確誁E
-        const login_id = localStorage.getItem("login_id");
-        const userName = localStorage.getItem("userName") || localStorage.getItem("user_name") || "";
-        document.getElementById("headerTitle").firstChild.textContent = `🌿 ${userName || "健康管琁E��プリ"} のホ�Eム`;
+        // Init header
+        renderHeader("ホーム");
 
-        if (!login_id) {
-            alert("ログインしてください");
-            location.href = "login.html";
-        }
+        // Set User Name
+        const userName = localStorage.getItem("userName") || "ゲスト";
+        document.getElementById("userName").textContent = userName;
 
-        // ログアウチE
-        function logout() {
-            if (confirm("ログアウトしますか�E�E)) {
-                localStorage.clear();
-                location.href = "login.html";
-            }
-        }
+        async function loadDashboard() {
+            const login_id = localStorage.getItem("login_id");
+            if (!login_id) return;
 
-        // アドバイス取征E
-        async function loadAdvice() {
             try {
                 const res = await fetch(`/api/advice/${login_id}`);
-                const json = await res.json();
+                const data = await res.json();
 
-                document.getElementById("todayIntake").innerText = `${json.today_intake} kcal`;
-                document.getElementById("todayBurn").innerText = `${json.today_burn} kcal`;
+                if (!data.success) throw new Error("Failed to load");
 
-                if (json.progress) {
-                    const p = json.progress;
-                    document.getElementById("weightSummary").innerHTML =
-                        `現在�E�Estrong>${p.current_weight} kg</strong>　目標！Estrong>${p.target_weight} kg</strong>�E�あと ${p.diff} kg�E�`;
+                // Update UI
+                document.getElementById("loadingAdvice").style.display = "none";
+                document.getElementById("adviceContent").style.display = "block";
 
-                    let pct = Math.max(0, Math.min(100, (p.target_weight / p.current_weight) * 100));
-                    document.getElementById("progressBar").style.width = (100 - pct) + "%";
+                // Stats
+                document.getElementById("valIntake").textContent = `${data.today_intake} kcal`;
+                document.getElementById("valBurn").textContent = `${data.today_burn} kcal`;
+
+                // Progress
+                if (data.progress) {
+                    const { current_weight, target_weight } = data.progress;
+                    document.getElementById("currentWeight").textContent = `${current_weight} kg`;
+                    document.getElementById("targetWeight").textContent = `目標: ${target_weight} kg`;
+
+                    // Simple progress calculation (inverse logic for weight loss)
+                    // Assuming weight loss: start > current > target
+                    // This is tricky without start weight. Just using valid data check for now.
+                    // For visualization, let's just show a full bar if target reached, otherwise partial?
+                    // Let's stick to the previous logical implementation but cleaner.
+
+                    let percent = 0;
+                    if (current_weight > 0) {
+                        // How close is current to target?
+                        // If target is 60, current is 70.
+                        // We want to show how "good" it is.
+                        // Let's just create a visual indicator that isn't a direct percentage bar if complex.
+                        // Actually, let's allow the bar to represent "Closeness".
+                        const diff = current_weight - target_weight; // e.g. 10kg
+                        // If diff is huge (e.g. 50kg), bar is low. If diff is 0, bar is 100%.
+                        // Using arbitrary scale: 20kg difference = 0%, 0kg = 100%.
+                        percent = Math.max(0, Math.min(100, 100 - (diff * 5)));
+                        if (diff < 0) percent = 100; // Reached
+                    }
+
+                    setTimeout(() => {
+                        document.getElementById("progressBar").style.width = `${percent}%`;
+                    }, 100);
                 }
 
-                const adv = document.getElementById("adviceList");
-                adv.innerHTML = "";
-                json.advice_text.forEach(t => {
-                    const p = document.createElement("p");
-                    p.textContent = t;
-                    p.style.margin = "6px 0";
-                    adv.appendChild(p);
+                // Advice
+                const list = document.getElementById("adviceList");
+                list.innerHTML = "";
+                data.advice_text.forEach(text => {
+                    const li = document.createElement("li");
+                    li.textContent = `💡 ${text}`;
+                    li.style.marginBottom = "8px";
+                    list.appendChild(li);
                 });
 
             } catch (err) {
                 console.error(err);
-                document.getElementById("adviceList").innerText = "アドバイスの取得に失敗しました";
+                document.getElementById("loadingAdvice").textContent = "データの読み込みに失敗しました";
             }
         }
 
-        loadAdvice();
+        loadDashboard();
     </script>
 </body>
 

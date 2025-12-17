@@ -4,93 +4,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ログイン | 健康管琁E��プリ</title>
+    <title>ログイン｜健康管理アプリ</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- Shared Style -->
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background: linear-gradient(to bottom right, #a8e6cf, #dcedc1);
-            margin: 0;
-            padding: 0;
-            height: 100vh;
+        .auth-container {
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
-        .container {
-            background-color: #fff;
-            width: 350px;
-            padding: 40px 30px;
-            border-radius: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
             text-align: center;
-        }
-
-        h1 {
-            color: #388e3c;
-            margin-bottom: 25px;
-            font-size: 24px;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        button {
-            width: 100%;
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        button:hover {
-            background-color: #388e3c;
-        }
-
-        #messageBox {
-            margin-top: 15px;
-            font-size: 14px;
-        }
-
-        .error {
-            color: #c62828;
-        }
-
-        .success {
-            color: #2e7d32;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1>ログイン</h1>
-        <form id="loginForm">
-            <input type="text" id="login_id" placeholder="ログインID" required>
-            <input type="password" id="password" placeholder="パスワーチE required>
-            <button type="submit">ログイン</button>
-        </form>
-        <div id="messageBox"></div>
-        <p class="message">アカウントがありませんか！E<a href="register.html">新規登録</a></p>
+    <div class="auth-container">
+        <div class="card auth-card fade-in">
+            <div class="mb-2">
+                <h1>ログイン</h1>
+                <p class="text-muted">健康管理を始めましょう</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="login_id">ログインID</label>
+                    <input type="text" id="login_id" placeholder="例: user123" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">パスワード</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn btn-block mt-1">ログインする</button>
+            </form>
+
+            <div class="mt-2" style="font-size: 0.9rem;">
+                <p>アカウントをお持ちでないですか？</p>
+                <a href="register.html" style="color: var(--primary); font-weight:600;">新規アカウント作成</a>
+            </div>
+        </div>
     </div>
 
+    <!-- Shared Components (Toast) -->
+    <script src="js/components.js"></script>
     <script>
         document.getElementById("loginForm").addEventListener("submit", async function (event) {
             event.preventDefault();
 
-            const login_id = document.getElementById("login_id").value;
+            const login_id = document.getElementById("login_id").value.trim();
             const password = document.getElementById("password").value;
-            const messageBox = document.getElementById("messageBox");
+            const submitBtn = this.querySelector('button[type="submit"]');
+
+            // Disable button
+            submitBtn.disabled = true;
+            submitBtn.textContent = "ログイン中...";
 
             try {
                 const res = await fetch("/api/login", {
@@ -102,12 +83,11 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    messageBox.textContent = data.message;
-                    messageBox.className = "success";
+                    Toast.show("ログイン成功！リダイレクト中...", "success");
 
-                    // ☁E修正�E�login_id めElocalStorage に保孁E
                     localStorage.setItem("login_id", login_id);
                     localStorage.setItem("userName", data.name);
+                    localStorage.setItem("loginTime", Date.now());
 
                     setTimeout(() => {
                         if (data.hasProfile === true) {
@@ -118,12 +98,15 @@
                     }, 800);
 
                 } else {
-                    messageBox.textContent = data.message;
-                    messageBox.className = "error";
+                    Toast.show(data.message || "ログインに失敗しました", "error");
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "ログインする";
                 }
             } catch (err) {
-                messageBox.textContent = "サーバ�Eエラーが発生しました";
-                messageBox.className = "error";
+                console.error("Login Error:", err);
+                Toast.show("通信エラーが発生しました", "error");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "ログインする";
             }
         });
     </script>

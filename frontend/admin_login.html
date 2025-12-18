@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ログイン｜健康管理アプリ</title>
+    <title>管理者ログイン｜健康管理アプリ</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,45 +20,43 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            background-color: #f0f2f5;
         }
 
         .auth-card {
             width: 100%;
             max-width: 400px;
             text-align: center;
+            border-top: 5px solid var(--accent);
+            /* Admin distinction */
         }
     </style>
 </head>
 
 <body>
-    <a href="admin_login.html"
-        style="position: absolute; top: 20px; right: 20px; text-decoration: none; color: #64748b; font-weight: 500; font-size: 0.9rem;">
-        管理者ログイン &rarr;
-    </a>
     <div class="auth-container">
         <div class="card auth-card fade-in">
             <div class="mb-2">
-                <h1>ログイン</h1>
-                <p class="text-muted">健康管理を始めましょう</p>
+                <h1 style="color: var(--accent);">管理者ログイン</h1>
+                <p class="text-muted">管理用コンソールへアクセス</p>
             </div>
 
-            <form id="loginForm">
+            <form id="adminLoginForm">
                 <div class="form-group">
-                    <label for="login_id">ログインID</label>
-                    <input type="text" id="login_id" placeholder="例: user123" required>
+                    <label for="login_id">管理者ID</label>
+                    <input type="text" id="login_id" placeholder="Admin" required>
                 </div>
 
                 <div class="form-group">
                     <label for="password">パスワード</label>
-                    <input type="password" id="password" placeholder="••••••••" required>
+                    <input type="password" id="password" placeholder="Admin Badge Password" required>
                 </div>
 
-                <button type="submit" class="btn btn-block mt-1">ログインする</button>
+                <button type="submit" class="btn btn-block mt-1" style="background-color: var(--accent);">ログイン</button>
             </form>
 
             <div class="mt-2" style="font-size: 0.9rem;">
-                <p>アカウントをお持ちでないですか？</p>
-                <a href="register.html" style="color: var(--primary); font-weight:600;">新規アカウント作成</a>
+                <a href="login.html" class="text-muted">← ユーザーログインへ戻る</a>
             </div>
         </div>
     </div>
@@ -66,7 +64,7 @@
     <!-- Shared Components (Toast) -->
     <script src="js/components.js"></script>
     <script>
-        document.getElementById("loginForm").addEventListener("submit", async function (event) {
+        document.getElementById("adminLoginForm").addEventListener("submit", async function (event) {
             event.preventDefault();
 
             const login_id = document.getElementById("login_id").value.trim();
@@ -75,9 +73,10 @@
 
             // Disable button
             submitBtn.disabled = true;
-            submitBtn.textContent = "ログイン中...";
+            submitBtn.textContent = "確認中...";
 
             try {
+                // 通常のログインAPIを使用
                 const res = await fetch("/api/login", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -87,30 +86,34 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    Toast.show("ログイン成功！リダイレクト中...", "success");
+                    // クライアント側で管理者IDかどうか簡易チェック
+                    if (data.login_id !== "Admin") {
+                        Toast.show("管理者権限がありません", "error");
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = "ログイン";
+                        return;
+                    }
+
+                    Toast.show("管理者認証 成功", "success");
 
                     localStorage.setItem("login_id", login_id);
                     localStorage.setItem("userName", data.name);
-                    localStorage.setItem("loginTime", Date.now());
+                    localStorage.setItem("isAdmin", "true"); // 管理者フラグ
 
                     setTimeout(() => {
-                        if (data.hasProfile === true) {
-                            window.location.href = "home.html";
-                        } else {
-                            window.location.href = "profile_register.html";
-                        }
+                        window.location.href = "admin_dashboard.html";
                     }, 800);
 
                 } else {
                     Toast.show(data.message || "ログインに失敗しました", "error");
                     submitBtn.disabled = false;
-                    submitBtn.textContent = "ログインする";
+                    submitBtn.textContent = "ログイン";
                 }
             } catch (err) {
                 console.error("Login Error:", err);
                 Toast.show("通信エラーが発生しました", "error");
                 submitBtn.disabled = false;
-                submitBtn.textContent = "ログインする";
+                submitBtn.textContent = "ログイン";
             }
         });
     </script>

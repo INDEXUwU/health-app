@@ -76,8 +76,42 @@ async function initDB() {
         console.error("★ヒント: 環境変数 DATABASE_URL が正しいMySQLのURLか確認してください。(Postgresなどは不可)");
     }
 }
+
+// Adminユーザー作成用関数
+async function ensureAdminUser() {
+    try {
+        const adminId = "Admin";
+        const adminPass = "Admin1713"; // 固定パスワード
+
+        const [rows] = await db.query("SELECT * FROM users WHERE login_id = ?", [adminId]);
+        if (rows.length === 0) {
+            console.log("管理者ユーザーを作成中...");
+            const hash = await bcrypt.hash(adminPass, 10);
+            await db.query(
+                "INSERT INTO users (name, login_id, password_hash, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())",
+                ["管理者", adminId, hash]
+            );
+            console.log("管理者ユーザーを作成しました (ID: Admin)");
+        }
+    } catch (err) {
+        console.error("管理者作成エラー:", err);
+    }
+}
 // サーバー起動時に一度だけ実行
-initDB();
+initDB()
+    .then(() => ensureAdminUser())
+    .then(async () => {
+        // 既存環境向けに login_history テーブルを念のため作成
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS login_history (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                login_id VARCHAR(191) NOT NULL,
+                login_datetime DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (login_id) REFERENCES users(login_id) ON DELETE CASCADE
+            )
+        `);
+        console.log("login_historyテーブル確認完了");
+    });
 
 // -----------------------------
 // テスト
@@ -137,6 +171,12 @@ app.post("/api/login", async (req, res) => {
 
         if (!match)
             return res.status(401).json({ message: "パスワードが違います" });
+
+        // ログイン履歴を記録
+        await db.query(
+            "INSERT INTO login_history (login_id, login_datetime) VALUES (?, NOW())",
+            [login_id]
+        );
 
         const hasProfile = !!(
             user.age ||
@@ -208,6 +248,80 @@ app.post("/api/user-info", async (req, res) => {
         );
 
         res.json({ message: "保存しました" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "サーバーエラー: " + err.message });
+    }
+});
+
+
+// -----------------------------
+// 管理者用ユーザーリスト取得
+// -----------------------------
+app.get("/api/admin/users", async (req, res) => {
+    try {
+        // ※ 本来はここで管理者権限チェック（Token検証など）が必要ですが、
+        // 今回は簡易的に実装します（フロントエンド側で制御＋Adminログイン前提）
+
+        const [rows] = await db.query(
+            "SELECT user_id, name, login_id, age, gender, created_at FROM users ORDER BY created_at DESC"
+        );
+        res.json(rows);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "サーバーエラー: " + err.message });
+    }
+});
+
+// -----------------------------
+// 管理者用：ログイン履歴取得
+// -----------------------------
+app.get("/api/admin/login-history", async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            `SELECT h.id, h.login_id, u.name, h.login_datetime 
+             FROM login_history h
+             LEFT JOIN users u ON h.login_id = u.login_id
+             ORDER BY h.login_datetime DESC
+             LIMIT 100`
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "サーバーエラー: " + err.message });
+    }
+});
+
+// -----------------------------
+// 管理者用：統計データ取得
+// -----------------------------
+app.get("/api/admin/stats", async (req, res) => {
+    try {
+        // 1. ユーザー数
+        const [userCount] = await db.query("SELECT COUNT(*) AS count FROM users WHERE login_id != 'Admin'");
+
+        // 2. 平均体重 (直近の記録) based on users table current weight
+        const [avgWeight] = await db.query("SELECT AVG(weight) AS val FROM users WHERE weight IS NOT NULL AND weight > 0");
+
+        // 3. 平均摂取カロリー (全期間の1日平均)
+        // ユーザーごとの1日の平均を出し、その全体の平均をとる、あるいは単純に 全カロリー / 全日数
+        const [avgIntake] = await db.query(
+            "SELECT AVG(daily_sum) AS val FROM (SELECT SUM(calories) as daily_sum FROM meal_records GROUP BY login_id, DATE(meal_datetime)) as sub"
+        );
+
+        // 4. 平均消費カロリー
+        const [avgBurn] = await db.query(
+            "SELECT AVG(daily_sum) AS val FROM (SELECT SUM(calories_burned) as daily_sum FROM exercise_records GROUP BY login_id, DATE(exercise_datetime)) as sub"
+        );
+
+        res.json({
+            user_count: userCount[0].count,
+            avg_weight: avgWeight[0].val ? Number(avgWeight[0].val).toFixed(1) : 0,
+            avg_intake: avgIntake[0].val ? Math.round(avgIntake[0].val) : 0,
+            avg_burn: avgBurn[0].val ? Math.round(avgBurn[0].val) : 0
+        });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "サーバーエラー: " + err.message });

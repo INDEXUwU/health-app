@@ -42,3 +42,11 @@ CREATE TABLE IF NOT EXISTS exercise_records (
     exercise_datetime DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (login_id) REFERENCES users(login_id) ON DELETE CASCADE
 );
+
+-- Login History
+CREATE TABLE IF NOT EXISTS login_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    login_id VARCHAR(191) NOT NULL,
+    login_datetime DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (login_id) REFERENCES users(login_id) ON DELETE CASCADE
+);

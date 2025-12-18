@@ -46,15 +46,32 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
         .stat-val {
             font-size: 1.2rem;
             font-weight: bold;
             color: var(--primary-dark);
         }
 
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
+        [data-theme="dark"] .stat-label {
+            color: #CCCCCC;
+        }
+
+        [data-theme="dark"] .stat-val {
+            color: #81C784;
+        }
+
+        [data-theme="dark"] .advice-card {
+            background: rgba(50, 50, 70, 0.6);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="dark"] .stat-box {
+            background: rgba(40, 40, 60, 0.5);
         }
 
         .progress-container {

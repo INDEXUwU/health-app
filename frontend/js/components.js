@@ -95,9 +95,43 @@ const Toast = {
 };
 
 /**
+ * Theme Management
+ */
+const Theme = {
+    init: () => {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        Theme.renderToggle();
+    },
+    toggle: () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const newTheme = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        Theme.updateToggleIcon();
+    },
+    renderToggle: () => {
+        const button = document.createElement('button');
+        button.className = 'theme-toggle';
+        button.setAttribute('aria-label', 'テーマ切り替え');
+        button.onclick = Theme.toggle;
+        document.body.appendChild(button);
+        Theme.updateToggleIcon();
+    },
+    updateToggleIcon: () => {
+        const button = document.querySelector('.theme-toggle');
+        if (!button) return;
+        const theme = document.documentElement.getAttribute('data-theme');
+        button.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+};
+
+/**
  * Initialize
  */
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize theme
+    Theme.init();
     // Only verify auth if standard page
     Auth.checkContext();
 });

@@ -36,12 +36,12 @@
 /* Dark Mode */
 [data-theme="dark"] {
     --primary: #66BB6A;
-    --primary-dark: #4CAF50;
+    --primary-dark: #81C784;
     --primary-light: #2E7D32;
     --accent: #42A5F5;
 
-    --text-main: #E0E0E0;
-    --text-muted: #B0B0B0;
+    --text-main: #FFFFFF;
+    --text-muted: #CCCCCC;
     --text-light: #ffffff;
 
     --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);

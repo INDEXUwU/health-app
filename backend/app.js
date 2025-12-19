@@ -1,9 +1,29 @@
 // backend/app.js
+require("dotenv").config();
 const express = require("express");
 const mysql = require("mysql2/promise");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
+
+// Google Gemini AI の初期化
+let genAI = null;
+let geminiModel = null;
+
+if (process.env.GEMINI_API_KEY) {
+    try {
+        genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        console.log("✓ Gemini API が初期化されました");
+    } catch (err) {
+        console.warn("⚠ Gemini API の初期化に失敗しました:", err.message);
+        console.warn("  → ルールベースのアドバイスを使用します");
+    }
+} else {
+    console.warn("⚠ GEMINI_API_KEY が設定されていません");
+    console.warn("  → ルールベースのアドバイスを使用します");
+}
 
 app.use(cors());
 app.use(express.json());
@@ -579,13 +599,153 @@ app.get("/api/totals/:login_id", async (req, res) => {
 });
 
 // -----------------------------
-// ▼ 新規追加：アドバイス生成 API
+// ▼ 改善：AI搭載アドバイス生成 API
 // -----------------------------
+
+// ルールベースのアドバイス生成（フォールバック用）
+function generateRuleBasedAdvice(data) {
+    const { today_intake, today_burn, current_weight, target_weight } = data;
+    let advice = [];
+    let progress = null;
+
+    // 7700 kcal ≒ 1 kg
+    if (current_weight !== null && target_weight !== null) {
+        const diff = Number((current_weight - target_weight).toFixed(2));
+        const kcal_needed = diff > 0 ? Math.round(diff * 7700) : 0;
+        const suggested_daily_deficit = 500;
+        const estimated_days = kcal_needed > 0 ? Math.ceil(kcal_needed / suggested_daily_deficit) : 0;
+
+        progress = {
+            current_weight,
+            target_weight,
+            diff,
+            kcal_needed,
+            estimated_days_to_goal: estimated_days
+        };
+
+        if (diff <= 0) {
+            advice.push("素晴らしい！目標体重を達成済みまたは目標を下回っています。維持のためにバランスの良い食事を心がけましょう。");
+        } else {
+            advice.push(`目標まで ${diff} kg。およそ ${kcal_needed} kcal のカロリー削減が必要です。標準的には一日あたり約 ${suggested_daily_deficit} kcal の赤字を作ると約 ${estimated_days} 日で到達します（目安）。`);
+        }
+    } else {
+        advice.push("体重データまたは目標体重が未設定です。プロフィール画面で目標体重を入力してください。");
+    }
+
+    // 今日の状況に基づくアドバイス
+    const net_today = today_intake - today_burn;
+    advice.push(`本日の摂取: ${today_intake} kcal、消費: ${today_burn} kcal（差し引き: ${net_today} kcal）。`);
+
+    if (net_today > 800) {
+        advice.push("今日の差し引きが大きいです。夕食を軽めにする・間食を控えると良いでしょう。");
+    } else if (net_today > 300) {
+        advice.push("少し多めの摂取です。軽めの運動（20〜30分のウォーキング等）をおすすめします。");
+    } else if (net_today < -300) {
+        advice.push("良い調整です。摂取と消費のバランスが取れています。無理のないペースで続けましょう。");
+    } else {
+        advice.push("今日の摂取・消費はおおむね良好です。継続が大切です。");
+    }
+
+    if (today_intake > 2000) {
+        advice.push("今日の摂取カロリーが高めです。夕食は野菜中心にすると良いです。");
+    } else if (today_intake < 1200) {
+        advice.push("摂取カロリーが低めです。筋肉維持のためにたんぱく質を含む食事をおすすめします。");
+    }
+
+    if (today_burn < 200) {
+        advice.push("運動量が少なめです。短時間の有酸素運動（20分）を追加すると効果的です。");
+    }
+
+    return { advice, progress };
+}
+
+// AI搭載アドバイス生成
+async function generateAIAdvice(data) {
+    const { today_intake, today_burn, current_weight, target_weight } = data;
+
+    try {
+        // Gemini APIが利用可能かチェック
+        if (!geminiModel) {
+            throw new Error("Gemini API が初期化されていません");
+        }
+
+        // プロンプトを構築
+        const net_calories = today_intake - today_burn;
+        const weight_diff = current_weight && target_weight ? (current_weight - target_weight).toFixed(1) : "不明";
+
+        const prompt = `あなたは親切な健康アドバイザーです。以下のユーザーの健康データに基づいて、具体的で実行可能なアドバイスを3〜5個、日本語で提案してください。
+
+【ユーザーデータ】
+- 現在の体重: ${current_weight ? current_weight + ' kg' : '未記録'}
+- 目標体重: ${target_weight ? target_weight + ' kg' : '未設定'}
+- 目標までの差: ${weight_diff} kg
+- 今日の摂取カロリー: ${today_intake} kcal
+- 今日の消費カロリー: ${today_burn} kcal
+- カロリー収支: ${net_calories > 0 ? '+' : ''}${net_calories} kcal
+
+【アドバイスの条件】
+1. 3〜5個の具体的なアドバイスを箇条書きで提示してください
+2. 各アドバイスは1〜2文で簡潔に
+3. 実行可能で前向きな提案を心がけてください
+4. 健康的で科学的に根拠のある内容にしてください
+5. 「💡」などの絵文字は使わず、文章のみで記載してください
+
+回答は箇条書きのみで、前置きや説明は不要です。`;
+
+        const result = await geminiModel.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        // AIの応答をパース（箇条書きを配列に変換）
+        const adviceList = text
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .filter(line => {
+                // 箇条書きのマーカーを除去（-, *, 数字. など）
+                return line.match(/^[\-\*]\s+/) || line.match(/^\d+\.\s+/) || (!line.includes(':') && line.length > 10);
+            })
+            .map(line => {
+                // マーカーを除去してクリーンなテキストに
+                return line.replace(/^[\-\*]\s+/, '').replace(/^\d+\.\s+/, '').trim();
+            })
+            .slice(0, 5); // 最大5個まで
+
+        // 進捗情報を計算
+        let progress = null;
+        if (current_weight !== null && target_weight !== null) {
+            const diff = Number((current_weight - target_weight).toFixed(2));
+            const kcal_needed = diff > 0 ? Math.round(diff * 7700) : 0;
+            const suggested_daily_deficit = 500;
+            const estimated_days = kcal_needed > 0 ? Math.ceil(kcal_needed / suggested_daily_deficit) : 0;
+
+            progress = {
+                current_weight,
+                target_weight,
+                diff,
+                kcal_needed,
+                estimated_days_to_goal: estimated_days
+            };
+        }
+
+        return {
+            advice: adviceList.length > 0 ? adviceList : ["今日も健康的な一日を過ごしましょう！"],
+            progress,
+            ai_generated: true
+        };
+
+    } catch (err) {
+        console.warn("⚠ AI アドバイス生成エラー:", err.message);
+        console.warn("  → ルールベースにフォールバックします");
+        throw err; // フォールバックのために再スロー
+    }
+}
+
 app.get("/api/advice/:login_id", async (req, res) => {
     try {
         const { login_id } = req.params;
 
-        // totals を取得（食事合計・運動合計・体重・目標）
+        // データ取得
         const [mealRows] = await db.query(
             `SELECT COALESCE(SUM(calories),0) AS today_intake
              FROM meal_records
@@ -611,76 +771,42 @@ app.get("/api/advice/:login_id", async (req, res) => {
             [login_id]
         );
 
-        const today_intake = mealRows[0] ? mealRows[0].today_intake : 0;
-        const today_burn = exRows[0] ? exRows[0].today_burn : 0;
-        const current_weight = wRows.length ? Number(wRows[0].weight) : null;
-        const target_weight = uRows.length ? Number(uRows[0].target_weight) : null;
+        const data = {
+            today_intake: mealRows[0] ? mealRows[0].today_intake : 0,
+            today_burn: exRows[0] ? exRows[0].today_burn : 0,
+            current_weight: wRows.length ? Number(wRows[0].weight) : null,
+            target_weight: uRows.length ? Number(uRows[0].target_weight) : null
+        };
 
-        // アドバイスのロジック（シンプルなルールベース）
-        // 7700 kcal ≒ 1 kg
-        let advice = [];
-        let progress = null;
-        if (current_weight !== null && target_weight !== null) {
-            const diff = Number((current_weight - target_weight).toFixed(2)); // 正：まだ減らす必要あり
-            const kcal_needed = diff > 0 ? Math.round(diff * 7700) : 0;
-            // 目安：-500 kcal/日 → 約0.5kg/週
-            const suggested_daily_deficit = 500;
-            const estimated_days = kcal_needed > 0 ? Math.ceil(kcal_needed / suggested_daily_deficit) : 0;
-
-            progress = {
-                current_weight,
-                target_weight,
-                diff,
-                kcal_needed,
-                estimated_days_to_goal: estimated_days
+        // AI生成を試行、失敗時はルールベースにフォールバック
+        let result;
+        try {
+            result = await generateAIAdvice(data);
+        } catch (aiError) {
+            // AIが失敗した場合、ルールベースを使用
+            const fallback = generateRuleBasedAdvice(data);
+            result = {
+                advice: fallback.advice,
+                progress: fallback.progress,
+                ai_generated: false
             };
-
-            if (diff <= 0) {
-                advice.push("素晴らしい！目標体重を達成済みまたは目標を下回っています。維持のためにバランスの良い食事を心がけましょう。");
-            } else {
-                advice.push(`目標まで ${diff} kg。およそ ${kcal_needed} kcal のカロリー削減が必要です。標準的には一日あたり約 ${suggested_daily_deficit} kcal の赤字を作ると約 ${estimated_days} 日で到達します（目安）。`);
-            }
-        } else {
-            advice.push("体重データまたは目標体重が未設定です。プロフィール画面で目標体重を入力してください。");
-        }
-
-        // 今日の状況に基づくアドバイス
-        const net_today = today_intake - today_burn; // 摂取 - 消費
-        advice.push(`本日の摂取: ${today_intake} kcal、消費: ${today_burn} kcal（差し引き: ${net_today} kcal）。`);
-
-        if (net_today > 800) {
-            advice.push("今日の差し引きが大きいです。夕食を軽めにする・間食を控えると良いでしょう。");
-        } else if (net_today > 300) {
-            advice.push("少し多めの摂取です。軽めの運動（20〜30分のウォーキング等）をおすすめします。");
-        } else if (net_today < -300) {
-            advice.push("良い調整です。摂取と消費のバランスが取れています。無理のないペースで続けましょう。");
-        } else {
-            advice.push("今日の摂取・消費はおおむね良好です。継続が大切です。");
-        }
-
-        // 簡単な食事提案（例）
-        if (today_intake > 2000) {
-            advice.push("今日の摂取カロリーが高めです。夕食は野菜中心にすると良いです。");
-        } else if (today_intake < 1200) {
-            advice.push("摂取カロリーが低めです。筋肉維持のためにたんぱく質を含む食事をおすすめします。");
-        }
-
-        // 簡単な運動提案
-        if (today_burn < 200) {
-            advice.push("運動量が少なめです。短時間の有酸素運動（20分）を追加すると効果的です。");
         }
 
         res.json({
             success: true,
-            today_intake,
-            today_burn,
-            progress,
-            advice_text: advice
+            today_intake: data.today_intake,
+            today_burn: data.today_burn,
+            progress: result.progress,
+            advice_text: result.advice,
+            ai_powered: result.ai_generated || false
         });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "アドバイスの生成に失敗しました: " + err.message });
+        console.error("アドバイスAPI エラー:", err);
+        res.status(500).json({
+            success: false,
+            message: "アドバイスの生成に失敗しました: " + err.message
+        });
     }
 });
 

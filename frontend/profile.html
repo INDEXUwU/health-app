@@ -4,137 +4,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>プロフィール情報｜健康管理Webサイト</title>
-    <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background: linear-gradient(to bottom right, #a8e6cf, #dcedc1);
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-        }
-
-        .container {
-            background-color: #fff;
-            width: 380px;
-            margin: 60px auto;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-            text-align: center;
-        }
-
-        h1 {
-            color: #388e3c;
-            margin-bottom: 10px;
-        }
-
-        h2 {
-            color: #555;
-            font-size: 18px;
-            margin-bottom: 25px;
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            text-align: left;
-        }
-
-        label {
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        input,
-        select {
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-            width: 100%;
-        }
-
-        button {
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        button:hover {
-            background-color: #388e3c;
-        }
-
-        #messageBox {
-            margin-top: 15px;
-            font-size: 14px;
-        }
-
-        .success {
-            color: #2e7d32;
-        }
-
-        .error {
-            color: #c62828;
-        }
-
-        .back {
-            margin-top: 20px;
-            display: inline-block;
-            color: #2e7d32;
-            text-decoration: none;
-        }
-
-        .back:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <title>プロフィール編集｜健康管理アプリ</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- Shared Style -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-    <div class="container">
-        <h1>健康管理アプリ</h1>
-        <h2>プロフィール情報</h2>
+    <!-- Header rendered by js/components.js -->
 
-        <form id="profileForm">
-            <label for="name">名前</label>
-            <input type="text" id="name" readonly>
+    <div class="container fade-in">
+        <div class="card" style="max-width: 500px; margin: 0 auto;">
+            <div class="text-center mb-2">
+                <h1>プロフィール編集</h1>
+                <p class="text-muted">あなたの健康情報を最新の状態に保ちましょう</p>
+            </div>
 
-            <label for="age">年齢</label>
-            <input type="number" id="age" min="0">
+            <form id="profileForm">
+                <div class="form-group">
+                    <label for="name">名前</label>
+                    <input type="text" id="name" readonly
+                        style="background: rgba(0,0,0,0.05); color: var(--text-muted);">
+                </div>
 
-            <label for="gender">性別</label>
-            <select id="gender">
-                <option value="">選択してください</option>
-                <option value="男性">男性</option>
-                <option value="女性">女性</option>
-                <option value="その他">その他</option>
-            </select>
+                <div class="form-group">
+                    <label for="age">年齢</label>
+                    <input type="number" id="age" min="0" placeholder="例: 25">
+                </div>
 
-            <label for="height">身長(cm)</label>
-            <input type="number" id="height" step="0.1">
+                <div class="form-group">
+                    <label for="gender">性別</label>
+                    <select id="gender">
+                        <option value="">選択してください</option>
+                        <option value="男性">男性</option>
+                        <option value="女性">女性</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
 
-            <label for="weight">体重(kg)</label>
-            <input type="number" id="weight" step="0.1">
+                <div class="form-group">
+                    <label for="height">身長(cm)</label>
+                    <input type="number" id="height" step="0.1" placeholder="例: 170.5">
+                </div>
 
-            <label for="target_weight">目標体重(kg)</label>
-            <input type="number" id="target_weight" step="0.1">
+                <div class="form-group">
+                    <label for="weight">現在の体重(kg)</label>
+                    <input type="number" id="weight" step="0.1" placeholder="例: 65.0">
+                </div>
 
-            <button type="submit">更新する</button>
-        </form>
+                <div class="form-group">
+                    <label for="target_weight">目標体重(kg)</label>
+                    <input type="number" id="target_weight" step="0.1" placeholder="例: 60.0">
+                </div>
 
-        <div id="messageBox"></div>
-        <a href="home.html" class="back">ホームに戻る</a>
+                <button type="submit" class="btn btn-block mt-1">
+                    <span>✨</span> プロフィールを更新する
+                </button>
+            </form>
+
+            <div id="messageBox" class="text-center mt-1"></div>
+
+            <div class="text-center mt-2">
+                <a href="home.html" class="btn btn-secondary btn-block">ホームに戻る</a>
+            </div>
+        </div>
     </div>
 
+    <!-- Components -->
+    <script src="js/components.js"></script>
     <script>
+        // Init header
+        renderHeader("プロフィール");
+
         const userName = localStorage.getItem("userName");
         if (!userName) {
             alert("ログイン情報がありません。ログインし直してください。");

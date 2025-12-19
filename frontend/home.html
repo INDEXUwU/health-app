@@ -151,7 +151,7 @@
                 <!-- Advice Card -->
                 <div class="card advice-card">
                     <h2>🌱 今日のアドバイス</h2>
-                    <div id="loadingAdvice">データを分析中...</div>
+                    <div id="loadingAdvice">AI がデータを分析中...</div>
 
                     <div id="adviceContent" style="display:none;">
                         <div class="stat-grid">
@@ -165,15 +165,20 @@
                             </div>
                         </div>
 
-                        <div class="mt-2">
-                            <p style="font-size:0.9rem; color: var(--text-muted);">目標体重まで</p>
-                            <div class="progress-container">
-                                <div class="progress-bar" id="progressBar"></div>
+                        <div class="weight-meter-container mt-2">
+                            <div class="weight-meter-labels">
+                                <span class="text-muted">目標体重まで</span>
+                                <span class="weight-remaining" id="weightDiffText">-- kg</span>
                             </div>
-                            <div
-                                style="display:flex; justify-content:space-between; font-size:0.85rem; color: var(--text-main);">
-                                <span id="currentWeight">Current: -- kg</span>
-                                <span id="targetWeight">Target: -- kg</span>
+                            <div class="progress-wrapper">
+                                <div class="progress-track"></div>
+                                <div class="progress-fill" id="progressBar"></div>
+                                <div class="progress-marker start" id="markerStart">--</div>
+                                <div class="progress-marker end" id="markerEnd">--</div>
+                            </div>
+                            <div class="progress-footer">
+                                <span id="currentWeightText">現在: -- kg</span>
+                                <span id="targetWeightText">目標: -- kg</span>
                             </div>
                         </div>
 
@@ -242,31 +247,30 @@
                 // Progress
                 if (data.progress) {
                     const { current_weight, target_weight } = data.progress;
-                    document.getElementById("currentWeight").textContent = `${current_weight} kg`;
-                    document.getElementById("targetWeight").textContent = `目標: ${target_weight} kg`;
+                    document.getElementById("currentWeightText").textContent = `現在: ${current_weight} kg`;
+                    document.getElementById("targetWeightText").textContent = `目標: ${target_weight} kg`;
+                    document.getElementById("markerStart").textContent = `${current_weight}`;
+                    document.getElementById("markerEnd").textContent = `${target_weight}`;
 
-                    // Simple progress calculation (inverse logic for weight loss)
-                    // Assuming weight loss: start > current > target
-                    // This is tricky without start weight. Just using valid data check for now.
-                    // For visualization, let's just show a full bar if target reached, otherwise partial?
-                    // Let's stick to the previous logical implementation but cleaner.
+                    const diff = current_weight - target_weight;
+                    const diffText = diff > 0 ? `あと ${diff.toFixed(1)}kg` : "目標達成！";
+                    document.getElementById("weightDiffText").textContent = diffText;
+                    if (diff <= 0) document.getElementById("weightDiffText").style.color = "var(--success)";
 
+                    // Calculate progress (Assuming weight loss: higher current is "start")
+                    // Let's assume a fixed range for visualization if we don't have start_weight
                     let percent = 0;
-                    if (current_weight > 0) {
-                        // How close is current to target?
-                        // If target is 60, current is 70.
-                        // We want to show how "good" it is.
-                        // Let's just create a visual indicator that isn't a direct percentage bar if complex.
-                        // Actually, let's allow the bar to represent "Closeness".
-                        const diff = current_weight - target_weight; // e.g. 10kg
-                        // If diff is huge (e.g. 50kg), bar is low. If diff is 0, bar is 100%.
-                        // Using arbitrary scale: 20kg difference = 0%, 0kg = 100%.
-                        percent = Math.max(0, Math.min(100, 100 - (diff * 5)));
-                        if (diff < 0) percent = 100; // Reached
+                    if (diff <= 0) {
+                        percent = 100;
+                    } else {
+                        // Show progress based on how much left to 10kg range
+                        percent = Math.max(5, Math.min(95, 100 - (diff * 10)));
                     }
 
                     setTimeout(() => {
-                        document.getElementById("progressBar").style.width = `${percent}%`;
+                        const bar = document.getElementById("progressBar");
+                        bar.style.width = `${percent}%`;
+                        if (percent >= 100) bar.style.background = "var(--success)";
                     }, 100);
                 }
 

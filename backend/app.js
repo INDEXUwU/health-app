@@ -14,7 +14,7 @@ let geminiModel = null;
 if (process.env.GEMINI_API_KEY) {
     try {
         genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const modelName = "gemini-1.5-flash-001";
+        const modelName = "gemini-2.0-flash";
         console.log(`AIモデルを初期化中: ${modelName}`);
         geminiModel = genAI.getGenerativeModel({ model: modelName });
         console.log("✓ Gemini API が初期化されました");

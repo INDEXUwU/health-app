@@ -74,64 +74,83 @@
             background: rgba(40, 40, 60, 0.5);
         }
 
-        .progress-container {
-            margin: 15px 0;
-            background: #eee;
-            border-radius: 10px;
-            height: 10px;
-            overflow: hidden;
+        .weight-meter-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        .progress-bar {
-            height: 100%;
-            background: var(--primary);
-            width: 0;
-            transition: width 1s ease;
-        }
-
-        .action-cards {
-            display: grid;
-            gap: 15px;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        }
-
-        .action-card {
-            background: white;
-            padding: 20px;
-            border-radius: var(--radius-md);
-            text-align: center;
-            cursor: pointer;
-            transition: 0.2s;
-            box-shadow: var(--shadow-sm);
+        .weight-meter-labels {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            height: 140px;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
         }
 
-        .action-card:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-md);
+        .weight-remaining {
+            font-weight: bold;
+            color: var(--primary-dark);
+            font-size: 1.1rem;
         }
 
-        .action-icon {
-            font-size: 2.5rem;
+        .progress-wrapper {
+            position: relative;
+            height: 24px;
+            background: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .action-title {
-            font-weight: 600;
-            color: var(--text-main);
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            width: 0;
+            border-radius: 12px;
+            transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+            position: relative;
         }
 
-        [data-theme="dark"] .action-card {
-            background: rgba(50, 50, 70, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        /* Shining effect */
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(90deg,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.3) 50%,
+                    rgba(255, 255, 255, 0) 100%);
+            transform: translateX(-100%);
+            animation: shimmer 2s infinite;
         }
 
-        [data-theme="dark"] .action-title {
-            color: #FFFFFF;
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .progress-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        [data-theme="dark"] .weight-meter-container {
+            background: rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="dark"] .progress-wrapper {
+            background: #444;
         }
     </style>
 </head>
@@ -165,16 +184,14 @@
                             </div>
                         </div>
 
-                        <div class="weight-meter-container mt-2">
+                        <div class="weight-meter-container">
                             <div class="weight-meter-labels">
-                                <span class="text-muted">目標体重まで</span>
+                                <span class="text-muted" style="font-size: 0.9em;">目標まで</span>
                                 <span class="weight-remaining" id="weightDiffText">-- kg</span>
                             </div>
+                            <!-- Meter -->
                             <div class="progress-wrapper">
-                                <div class="progress-track"></div>
                                 <div class="progress-fill" id="progressBar"></div>
-                                <div class="progress-marker start" id="markerStart">--</div>
-                                <div class="progress-marker end" id="markerEnd">--</div>
                             </div>
                             <div class="progress-footer">
                                 <span id="currentWeightText">現在: -- kg</span>
@@ -209,7 +226,6 @@
                     </a>
                     <a href="history.html" class="action-card">
                         <span class="action-icon">📊</span>
-                        <span class="action-title">履歴・グラフ</span>
                     </a>
                 </div>
             </div>
@@ -230,9 +246,11 @@
             const login_id = localStorage.getItem("login_id");
             if (!login_id) return;
 
+            let data; // Declare data here to be accessible in try/catch
+
             try {
                 const res = await fetch(`/api/advice/${login_id}`);
-                const data = await res.json();
+                data = await res.json(); // Assign to the declared data variable
 
                 if (!data.success) throw new Error("Failed to load");
 
@@ -249,28 +267,36 @@
                     const { current_weight, target_weight } = data.progress;
                     document.getElementById("currentWeightText").textContent = `現在: ${current_weight} kg`;
                     document.getElementById("targetWeightText").textContent = `目標: ${target_weight} kg`;
-                    document.getElementById("markerStart").textContent = `${current_weight}`;
-                    document.getElementById("markerEnd").textContent = `${target_weight}`;
 
                     const diff = current_weight - target_weight;
                     const diffText = diff > 0 ? `あと ${diff.toFixed(1)}kg` : "目標達成！";
                     document.getElementById("weightDiffText").textContent = diffText;
-                    if (diff <= 0) document.getElementById("weightDiffText").style.color = "var(--success)";
 
-                    // Calculate progress (Assuming weight loss: higher current is "start")
-                    // Let's assume a fixed range for visualization if we don't have start_weight
+                    if (diff <= 0) {
+                        document.getElementById("weightDiffText").style.color = "var(--success)";
+                    }
+
+                    // Calculate progress percentage
+                    // Heuristic: Assume 10kg range for "start" if we don't have start_weight. 
+                    // This means if diff is 10kg, bar is 0%. If diff is 0kg, bar is 100%.
                     let percent = 0;
                     if (diff <= 0) {
                         percent = 100;
                     } else {
-                        // Show progress based on how much left to 10kg range
-                        percent = Math.max(5, Math.min(95, 100 - (diff * 10)));
+                        // linear map: 10kg -> 0%, 0kg -> 100%
+                        // p = 100 - (diff * 10)
+                        percent = Math.max(5, Math.min(100, 100 - (diff * 10)));
                     }
 
+                    // Animate bar
                     setTimeout(() => {
                         const bar = document.getElementById("progressBar");
                         bar.style.width = `${percent}%`;
-                        if (percent >= 100) bar.style.background = "var(--success)";
+                        if (percent >= 100) {
+                            bar.style.background = "var(--success)";
+                        } else if (percent < 20) {
+                            bar.style.background = "var(--warning)";
+                        }
                     }, 100);
                 }
 

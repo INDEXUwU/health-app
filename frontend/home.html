@@ -222,218 +222,221 @@
 
                 <!-- Calorie Balance -->
                 <div class="card">
-                    <h3>今日の収支</h3>
-                    <div style="position:relative; height:200px; width:100%;">
-                        <canvas id="balanceChart"></canvas>
+                    <!-- Calorie Balance -->
+                    <div class="card">
+                        <h3>今日の摂取・消費カロリー</h3>
+                        <div style="position:relative; height:200px; width:100%;">
+                            <canvas id="balanceChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Components -->
-    <script src="js/components.js"></script>
-    <script>
-        // Init header
-        renderHeader("ホーム");
+        <!-- Components -->
+        <script src="js/components.js"></script>
+        <script>
+            // Init header
+            renderHeader("ホーム");
 
-        // Set User Name
-        const userName = localStorage.getItem("userName") || "ゲスト";
-        document.getElementById("userName").textContent = userName;
+            // Set User Name
+            const userName = localStorage.getItem("userName") || "ゲスト";
+            document.getElementById("userName").textContent = userName;
 
-        let weightChart = null;
-        let balanceChart = null;
+            let weightChart = null;
+            let balanceChart = null;
 
-        // Theme check for Chart.js
-        const getChartTextColor = () => {
-            // Simple detection or use CSS var if supported in plugin
-            return document.documentElement.getAttribute('data-theme') === 'dark' ? '#eee' : '#666';
-        };
+            // Theme check for Chart.js
+            const getChartTextColor = () => {
+                // Simple detection or use CSS var if supported in plugin
+                return document.documentElement.getAttribute('data-theme') === 'dark' ? '#eee' : '#666';
+            };
 
-        const getChartGridColor = () => {
-            return document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-        };
+            const getChartGridColor = () => {
+                return document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            };
 
-        async function loadDashboard() {
-            const login_id = localStorage.getItem("login_id");
-            if (!login_id) return;
+            async function loadDashboard() {
+                const login_id = localStorage.getItem("login_id");
+                if (!login_id) return;
 
-            try {
-                // 1. Get Advice & Today's Data
-                const res = await fetch(`/api/advice/${login_id}`);
-                const data = await res.json();
+                try {
+                    // 1. Get Advice & Today's Data
+                    const res = await fetch(`/api/advice/${login_id}`);
+                    const data = await res.json();
 
-                if (!data.success) throw new Error("Failed to load");
+                    if (!data.success) throw new Error("Failed to load");
 
-                // Update UI
-                document.getElementById("loadingAdvice").style.display = "none";
-                document.getElementById("adviceContent").style.display = "block";
+                    // Update UI
+                    document.getElementById("loadingAdvice").style.display = "none";
+                    document.getElementById("adviceContent").style.display = "block";
 
-                // Stats
-                document.getElementById("valIntake").textContent = `${data.today_intake} kcal`;
-                document.getElementById("valBurn").textContent = `${data.today_burn} kcal`;
+                    // Stats
+                    document.getElementById("valIntake").textContent = `${data.today_intake} kcal`;
+                    document.getElementById("valBurn").textContent = `${data.today_burn} kcal`;
 
-                // Progress Bar
-                if (data.progress) {
-                    const { current_weight, target_weight } = data.progress;
-                    document.getElementById("currentWeightText").textContent = `現在: ${current_weight} kg`;
-                    document.getElementById("targetWeightText").textContent = `目標: ${target_weight} kg`;
+                    // Progress Bar
+                    if (data.progress) {
+                        const { current_weight, target_weight } = data.progress;
+                        document.getElementById("currentWeightText").textContent = `現在: ${current_weight} kg`;
+                        document.getElementById("targetWeightText").textContent = `目標: ${target_weight} kg`;
 
-                    const diff = current_weight - target_weight;
-                    const diffText = diff > 0 ? `あと ${diff.toFixed(1)}kg` : "目標達成！";
-                    document.getElementById("weightDiffText").textContent = diffText;
+                        const diff = current_weight - target_weight;
+                        const diffText = diff > 0 ? `あと ${diff.toFixed(1)}kg` : "目標達成！";
+                        document.getElementById("weightDiffText").textContent = diffText;
 
-                    if (diff <= 0) {
-                        document.getElementById("weightDiffText").style.color = "var(--success)";
-                    } else {
-                        document.getElementById("weightDiffText").style.color = "";
+                        if (diff <= 0) {
+                            document.getElementById("weightDiffText").style.color = "var(--success)";
+                        } else {
+                            document.getElementById("weightDiffText").style.color = "";
+                        }
+
+                        // Linear map: 10kg -> 0%, 0kg -> 100%
+                        let percent = diff <= 0 ? 100 : Math.max(5, Math.min(100, 100 - (diff * 10)));
+
+                        setTimeout(() => {
+                            const bar = document.getElementById("progressBar");
+                            if (bar) {
+                                bar.style.width = `${percent}%`;
+                                if (percent >= 100) bar.style.background = "var(--success)";
+                                else if (percent < 20) bar.style.background = "var(--warning)";
+                            }
+                        }, 100);
                     }
 
-                    // Linear map: 10kg -> 0%, 0kg -> 100%
-                    let percent = diff <= 0 ? 100 : Math.max(5, Math.min(100, 100 - (diff * 10)));
+                    // Advice
+                    const list = document.getElementById("adviceList");
+                    list.innerHTML = "";
+                    // Fixed: API returns advice_text
+                    const adviceArr = data.advice_text || data.advice;
+                    if (adviceArr && Array.isArray(adviceArr)) {
+                        adviceArr.forEach(text => {
+                            const li = document.createElement("li");
+                            li.textContent = `💡 ${text}`;
+                            li.style.marginBottom = "8px";
+                            list.appendChild(li);
+                        });
+                    }
 
-                    setTimeout(() => {
-                        const bar = document.getElementById("progressBar");
-                        if (bar) {
-                            bar.style.width = `${percent}%`;
-                            if (percent >= 100) bar.style.background = "var(--success)";
-                            else if (percent < 20) bar.style.background = "var(--warning)";
-                        }
-                    }, 100);
+                    // 2. Render Balance Chart (Today)
+                    renderBalanceChart(data.today_intake, data.today_burn);
+
+                    // 3. Get Weight History & Render Weight Chart
+                    const wRes = await fetch(`/api/weights/${login_id}`);
+                    const wData = await wRes.json();
+                    renderWeightChart(wData);
+
+                } catch (err) {
+                    console.error(err);
+                    document.getElementById("loadingAdvice").textContent = "データの読み込みに失敗しました";
                 }
-
-                // Advice
-                const list = document.getElementById("adviceList");
-                list.innerHTML = "";
-                // Note: The API returns data.advice which is an array of strings (see app.js)
-                if (data.advice && Array.isArray(data.advice)) {
-                    data.advice.forEach(text => {
-                        const li = document.createElement("li");
-                        li.textContent = `💡 ${text}`;
-                        li.style.marginBottom = "8px";
-                        list.appendChild(li);
-                    });
-                }
-
-                // 2. Render Balance Chart (Today)
-                renderBalanceChart(data.today_intake, data.today_burn);
-
-                // 3. Get Weight History & Render Weight Chart
-                const wRes = await fetch(`/api/weights/${login_id}`);
-                const wData = await wRes.json();
-                renderWeightChart(wData);
-
-            } catch (err) {
-                console.error(err);
-                document.getElementById("loadingAdvice").textContent = "データの読み込みに失敗しました";
             }
-        }
 
-        function renderBalanceChart(intake, burn) {
-            const ctx = document.getElementById("balanceChart").getContext("2d");
-            if (balanceChart) balanceChart.destroy();
+            function renderBalanceChart(intake, burn) {
+                const ctx = document.getElementById("balanceChart").getContext("2d");
+                if (balanceChart) balanceChart.destroy();
 
-            const textColor = getChartTextColor();
+                const textColor = getChartTextColor();
 
-            balanceChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['摂取', '消費'],
-                    datasets: [{
-                        data: [intake, burn],
-                        backgroundColor: ['#FF7043', '#42A5F5'], // Intake (Orange), Burn (Blue)
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { color: textColor }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    return ` ${context.label}: ${context.raw} kcal`;
+                balanceChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [`摂取: ${intake} kcal`, `消費: ${burn} kcal`],
+                        datasets: [{
+                            data: [intake, burn],
+                            backgroundColor: ['#FF7043', '#42A5F5'], // Intake (Orange), Burn (Blue)
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: textColor }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return ` ${context.raw} kcal`;
+                                    }
                                 }
                             }
-                        }
-                    },
-                    cutout: '70%',
-                }
-            });
-        }
-
-        function renderWeightChart(weightData) {
-            const ctx = document.getElementById("weightChart").getContext("2d");
-            if (weightChart) weightChart.destroy();
-
-            // Recent 14 records (~2 weeks)
-            const recent = weightData.slice(-14);
-            const labels = recent.map(d => new Date(d.record_date).toLocaleDateString());
-            const data = recent.map(d => d.weight);
-
-            const textColor = getChartTextColor();
-            const gridColor = getChartGridColor();
-
-            weightChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '体重 (kg)',
-                        data: data,
-                        borderColor: '#66BB6A', // Green
-                        backgroundColor: 'rgba(102, 187, 106, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#66BB6A'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: { color: textColor, maxRotation: 45, minRotation: 45 },
-                            grid: { color: gridColor, drawBorder: false }
                         },
-                        y: {
-                            ticks: { color: textColor },
-                            grid: { color: gridColor, borderDash: [5, 5] },
-                            // Add some padding to Y axis
-                            suggestedMin: Math.min(...data) - 1.0,
-                            suggestedMax: Math.max(...data) + 1.0
+                        cutout: '60%',
+                    }
+                });
+            }
+
+            function renderWeightChart(weightData) {
+                const ctx = document.getElementById("weightChart").getContext("2d");
+                if (weightChart) weightChart.destroy();
+
+                // Recent 14 records (~2 weeks)
+                const recent = weightData.slice(-14);
+                const labels = recent.map(d => new Date(d.record_date).toLocaleDateString());
+                const data = recent.map(d => d.weight);
+
+                const textColor = getChartTextColor();
+                const gridColor = getChartGridColor();
+
+                weightChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '体重 (kg)',
+                            data: data,
+                            borderColor: '#66BB6A', // Green
+                            backgroundColor: 'rgba(102, 187, 106, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: '#66BB6A'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: textColor, maxRotation: 45, minRotation: 45 },
+                                grid: { color: gridColor, drawBorder: false }
+                            },
+                            y: {
+                                ticks: { color: textColor },
+                                grid: { color: gridColor, borderDash: [5, 5] },
+                                // Add some padding to Y axis
+                                suggestedMin: Math.min(...data) - 1.0,
+                                suggestedMax: Math.max(...data) + 1.0
+                            }
                         }
                     }
-                }
-            });
-        }
+                });
+            }
 
-        // Re-render when theme changes
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === "attributes" && mutation.attributeName === "data-theme") {
-                    loadDashboard();
-                }
+            // Re-render when theme changes
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === "attributes" && mutation.attributeName === "data-theme") {
+                        loadDashboard();
+                    }
+                });
             });
-        });
-        observer.observe(document.documentElement, { attributes: true });
+            observer.observe(document.documentElement, { attributes: true });
 
-        loadDashboard();
-    </script>
+            loadDashboard();
+        </script>
 </body>
 
 </html>

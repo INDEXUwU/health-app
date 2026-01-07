@@ -13,6 +13,8 @@
         rel="stylesheet">
     <!-- Shared Style -->
     <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js -->
+    <script src="js/chart.umd.min.js" defer></script>
     <style>
         .dashboard-grid {
             display: grid;
@@ -208,26 +210,22 @@
                 </div>
             </div>
 
-            <!-- Right Column: Quick Actions -->
+            <!-- Right Column: Graphs -->
             <div class="side-column">
-                <h2>クイックアクション</h2>
-                <div class="action-cards mt-1">
-                    <a href="record_meal.html" class="action-card">
-                        <span class="action-icon">🍽️</span>
-                        <span class="action-title">食事を記録</span>
-                    </a>
-                    <a href="record_exercise.html" class="action-card">
-                        <span class="action-icon">🏃</span>
-                        <span class="action-title">運動を記録</span>
-                    </a>
-                    <a href="record_weight.html" class="action-card">
-                        <span class="action-icon">⚖️</span>
-                        <span class="action-title">体重を記録</span>
-                    </a>
-                    <a href="history.html" class="action-card">
-                        <span class="action-icon">📊</span>
-                        <span class="action-title">グラフを表示</span>
-                    </a>
+                <!-- Weight Trend -->
+                <div class="card mb-2">
+                    <h3>体重の推移</h3>
+                    <div style="position:relative; height:200px; width:100%;">
+                        <canvas id="weightChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Calorie Balance -->
+                <div class="card">
+                    <h3>今日の収支</h3>
+                    <div style="position:relative; height:200px; width:100%;">
+                        <canvas id="balanceChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -243,15 +241,27 @@
         const userName = localStorage.getItem("userName") || "ゲスト";
         document.getElementById("userName").textContent = userName;
 
+        let weightChart = null;
+        let balanceChart = null;
+
+        // Theme check for Chart.js
+        const getChartTextColor = () => {
+            // Simple detection or use CSS var if supported in plugin
+            return document.documentElement.getAttribute('data-theme') === 'dark' ? '#eee' : '#666';
+        };
+
+        const getChartGridColor = () => {
+            return document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        };
+
         async function loadDashboard() {
             const login_id = localStorage.getItem("login_id");
             if (!login_id) return;
 
-            let data; // Declare data here to be accessible in try/catch
-
             try {
+                // 1. Get Advice & Today's Data
                 const res = await fetch(`/api/advice/${login_id}`);
-                data = await res.json(); // Assign to the declared data variable
+                const data = await res.json();
 
                 if (!data.success) throw new Error("Failed to load");
 
@@ -263,7 +273,7 @@
                 document.getElementById("valIntake").textContent = `${data.today_intake} kcal`;
                 document.getElementById("valBurn").textContent = `${data.today_burn} kcal`;
 
-                // Progress
+                // Progress Bar
                 if (data.progress) {
                     const { current_weight, target_weight } = data.progress;
                     document.getElementById("currentWeightText").textContent = `現在: ${current_weight} kg`;
@@ -275,28 +285,19 @@
 
                     if (diff <= 0) {
                         document.getElementById("weightDiffText").style.color = "var(--success)";
-                    }
-
-                    // Calculate progress percentage
-                    // Heuristic: Assume 10kg range for "start" if we don't have start_weight. 
-                    // This means if diff is 10kg, bar is 0%. If diff is 0kg, bar is 100%.
-                    let percent = 0;
-                    if (diff <= 0) {
-                        percent = 100;
                     } else {
-                        // linear map: 10kg -> 0%, 0kg -> 100%
-                        // p = 100 - (diff * 10)
-                        percent = Math.max(5, Math.min(100, 100 - (diff * 10)));
+                        document.getElementById("weightDiffText").style.color = "";
                     }
 
-                    // Animate bar
+                    // Linear map: 10kg -> 0%, 0kg -> 100%
+                    let percent = diff <= 0 ? 100 : Math.max(5, Math.min(100, 100 - (diff * 10)));
+
                     setTimeout(() => {
                         const bar = document.getElementById("progressBar");
-                        bar.style.width = `${percent}%`;
-                        if (percent >= 100) {
-                            bar.style.background = "var(--success)";
-                        } else if (percent < 20) {
-                            bar.style.background = "var(--warning)";
+                        if (bar) {
+                            bar.style.width = `${percent}%`;
+                            if (percent >= 100) bar.style.background = "var(--success)";
+                            else if (percent < 20) bar.style.background = "var(--warning)";
                         }
                     }, 100);
                 }
@@ -304,18 +305,132 @@
                 // Advice
                 const list = document.getElementById("adviceList");
                 list.innerHTML = "";
-                data.advice_text.forEach(text => {
-                    const li = document.createElement("li");
-                    li.textContent = `💡 ${text}`;
-                    li.style.marginBottom = "8px";
-                    list.appendChild(li);
-                });
+                // Note: The API returns data.advice which is an array of strings (see app.js)
+                if (data.advice && Array.isArray(data.advice)) {
+                    data.advice.forEach(text => {
+                        const li = document.createElement("li");
+                        li.textContent = `💡 ${text}`;
+                        li.style.marginBottom = "8px";
+                        list.appendChild(li);
+                    });
+                }
+
+                // 2. Render Balance Chart (Today)
+                renderBalanceChart(data.today_intake, data.today_burn);
+
+                // 3. Get Weight History & Render Weight Chart
+                const wRes = await fetch(`/api/weights/${login_id}`);
+                const wData = await wRes.json();
+                renderWeightChart(wData);
 
             } catch (err) {
                 console.error(err);
                 document.getElementById("loadingAdvice").textContent = "データの読み込みに失敗しました";
             }
         }
+
+        function renderBalanceChart(intake, burn) {
+            const ctx = document.getElementById("balanceChart").getContext("2d");
+            if (balanceChart) balanceChart.destroy();
+
+            const textColor = getChartTextColor();
+
+            balanceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['摂取', '消費'],
+                    datasets: [{
+                        data: [intake, burn],
+                        backgroundColor: ['#FF7043', '#42A5F5'], // Intake (Orange), Burn (Blue)
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: textColor }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return ` ${context.label}: ${context.raw} kcal`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%',
+                }
+            });
+        }
+
+        function renderWeightChart(weightData) {
+            const ctx = document.getElementById("weightChart").getContext("2d");
+            if (weightChart) weightChart.destroy();
+
+            // Recent 14 records (~2 weeks)
+            const recent = weightData.slice(-14);
+            const labels = recent.map(d => new Date(d.record_date).toLocaleDateString());
+            const data = recent.map(d => d.weight);
+
+            const textColor = getChartTextColor();
+            const gridColor = getChartGridColor();
+
+            weightChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '体重 (kg)',
+                        data: data,
+                        borderColor: '#66BB6A', // Green
+                        backgroundColor: 'rgba(102, 187, 106, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#66BB6A'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: textColor, maxRotation: 45, minRotation: 45 },
+                            grid: { color: gridColor, drawBorder: false }
+                        },
+                        y: {
+                            ticks: { color: textColor },
+                            grid: { color: gridColor, borderDash: [5, 5] },
+                            // Add some padding to Y axis
+                            suggestedMin: Math.min(...data) - 1.0,
+                            suggestedMax: Math.max(...data) + 1.0
+                        }
+                    }
+                }
+            });
+        }
+
+        // Re-render when theme changes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === "attributes" && mutation.attributeName === "data-theme") {
+                    loadDashboard();
+                }
+            });
+        });
+        observer.observe(document.documentElement, { attributes: true });
 
         loadDashboard();
     </script>

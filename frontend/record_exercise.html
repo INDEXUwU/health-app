@@ -99,10 +99,7 @@
         let chart = null;
 
         // Mets
-        const metsTable = {
-            "ウォーキング": 3.5, "ランニング": 7.0, "サイクリング": 4.0,
-            "筋トレ": 5.0, "ヨガ": 2.5, "ストレッチ": 2.3
-        };
+        // metsTable removed for full AI estimation
         const userWeight = 60; // TODO: fetch from user info if possible, for now default
 
         let debounceTimer = null;
@@ -117,16 +114,6 @@
 
             if (!name) return;
 
-            // 1. Local Search
-            let metsFound = false;
-            for (const key in metsTable) {
-                if (name.includes(key)) {
-                    currentMets = metsTable[key];
-                    metsFound = true;
-                    break;
-                }
-            }
-
             // Function to update calories display
             const updateCalories = () => {
                 if (min) {
@@ -135,12 +122,6 @@
                     calInput.placeholder = "--";
                 }
             };
-
-            if (metsFound) {
-                updateCalories();
-                if (debounceTimer) clearTimeout(debounceTimer); // Clear pending AI check if found locally
-                return;
-            }
 
             // 2. AI Estimation (Debounced)
             // Only fetch if we have a name and it wasn't found locally

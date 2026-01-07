@@ -93,11 +93,7 @@
         let chart = null;
 
         // Auto Calc Helper
-        const calorieDB = {
-            "カレー": 700, "ラーメン": 550, "チャーハン": 650, "サラダ": 120,
-            "サンドイッチ": 300, "牛丼": 900, "寿司": 450, "パスタ": 600,
-            "ピザ": 700, "トンカツ": 800, "からあげ": 450, "ご飯": 168, "パン": 260
-        };
+        // calorieDB removed for full AI estimation
 
         let debounceTimer = null;
         const DEBOUNCE_DELAY = 1000; // 1 second
@@ -108,14 +104,7 @@
 
             if (!name) return;
 
-            // 1. Local Search first
-            for (const key in calorieDB) {
-                if (name.includes(key)) {
-                    calorieInput.placeholder = "--";
-                    calorieInput.value = calorieDB[key];
-                    return;
-                }
-            }
+            // AI Estimation (Debounced)
 
             // 2. AI Estimation (Debounced)
             // Clear previous timer

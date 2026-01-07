@@ -99,17 +99,53 @@
             "ピザ": 700, "トンカツ": 800, "からあげ": 450, "ご飯": 168, "パン": 260
         };
 
-        function autoCalcCalories() {
+        let debounceTimer = null;
+        const DEBOUNCE_DELAY = 1000; // 1 second
+
+        async function autoCalcCalories() {
             const name = document.getElementById("meal_name").value.trim();
+            const calorieInput = document.getElementById("calories");
+
             if (!name) return;
 
-            // Exact or partial match
+            // 1. Local Search first
             for (const key in calorieDB) {
                 if (name.includes(key)) {
-                    document.getElementById("calories").value = calorieDB[key];
+                    calorieInput.placeholder = "--";
+                    calorieInput.value = calorieDB[key];
                     return;
                 }
             }
+
+            // 2. AI Estimation (Debounced)
+            // Clear previous timer
+            if (debounceTimer) clearTimeout(debounceTimer);
+
+            // Clear current value if not found locally, show loading state in placeholder
+            calorieInput.value = "";
+            calorieInput.placeholder = "AI推定中...";
+
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch("/api/estimate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ text: name, type: "meal" })
+                    });
+
+                    if (!res.ok) throw new Error("Estimation failed");
+
+                    const data = await res.json();
+                    if (data.value) {
+                        calorieInput.value = data.value;
+                        calorieInput.placeholder = "--";
+                        // User feedback via placeholder or small toast could be nice, but simple value fill is fine
+                    }
+                } catch (e) {
+                    console.error(e);
+                    calorieInput.placeholder = "手入力してください";
+                }
+            }, DEBOUNCE_DELAY);
         }
 
         async function saveMeal() {

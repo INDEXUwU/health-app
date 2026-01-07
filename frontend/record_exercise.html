@@ -105,18 +105,74 @@
         };
         const userWeight = 60; // TODO: fetch from user info if possible, for now default
 
-        function calc() {
-            const name = document.getElementById("exercise_name").value.trim();
-            const min = parseFloat(document.getElementById("duration").value);
-            if (!name || !min) return;
+        let debounceTimer = null;
+        const DEBOUNCE_DELAY = 1000;
+        let currentMets = 3.0; // default active metabolic rate
 
-            let mets = 3.0; // default
+        async function calc() {
+            const name = document.getElementById("exercise_name").value.trim();
+            const durationInput = document.getElementById("duration");
+            const calInput = document.getElementById("calories_burned");
+            const min = parseFloat(durationInput.value);
+
+            if (!name) return;
+
+            // 1. Local Search
+            let metsFound = false;
             for (const key in metsTable) {
-                if (name.includes(key)) mets = metsTable[key];
+                if (name.includes(key)) {
+                    currentMets = metsTable[key];
+                    metsFound = true;
+                    break;
+                }
             }
 
-            const kcal = Math.round(mets * userWeight * (min / 60));
-            document.getElementById("calories_burned").value = kcal;
+            // Function to update calories display
+            const updateCalories = () => {
+                if (min) {
+                    const k = Math.round(currentMets * userWeight * (min / 60));
+                    calInput.value = k;
+                    calInput.placeholder = "--";
+                }
+            };
+
+            if (metsFound) {
+                updateCalories();
+                if (debounceTimer) clearTimeout(debounceTimer); // Clear pending AI check if found locally
+                return;
+            }
+
+            // 2. AI Estimation (Debounced)
+            // Only fetch if we have a name and it wasn't found locally
+            if (debounceTimer) clearTimeout(debounceTimer);
+
+            // If we are waiting for AI, maybe show indication?
+            // For now, let's keep previous value until update, or clear it.
+            // Let's explicitly show we are looking up.
+            calInput.placeholder = "METs推定中...";
+            if (min) calInput.value = ""; // Clear old value to show loading state effectively
+
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch("/api/estimate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ text: name, type: "exercise" })
+                    });
+
+                    if (!res.ok) throw new Error("Estimation failed");
+
+                    const data = await res.json();
+                    if (data.value) {
+                        currentMets = data.value;
+                        updateCalories();
+                    }
+                } catch (e) {
+                    console.error(e);
+                    // Fallback to default or manual
+                    calInput.placeholder = "手入力";
+                }
+            }, DEBOUNCE_DELAY);
         }
 
         async function saveExercise() {

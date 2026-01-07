@@ -601,6 +601,60 @@ app.get("/api/totals/:login_id", async (req, res) => {
 });
 
 // -----------------------------
+// ▼ 新規追加：AI推定 API
+// -----------------------------
+app.post("/api/estimate", async (req, res) => {
+    try {
+        const { text, type } = req.body;
+
+        if (!text || !type) {
+            return res.status(400).json({ message: "text と type が必要です" });
+        }
+
+        if (!geminiModel) {
+            return res.status(503).json({ message: "AI機能が利用できません" });
+        }
+
+        let prompt = "";
+        if (type === "meal") {
+            prompt = `あなたは栄養士です。
+料理名: "${text}"
+この料理の一般的な1人前のカロリー数(kcal)を整数値だけで答えてください。
+範囲がある場合は平均的な値を1つだけ返してください。
+説明や単位は不要です。数字のみを返してください。
+例: 600`;
+        } else if (type === "exercise") {
+            prompt = `あなたはスポーツトレーナーです。
+運動名: "${text}"
+この運動のMETs(メッツ)値を数値で答えてください。
+範囲がある場合は平均的な値を1つだけ返してください。
+説明は不要です。数字のみを返してください。
+例: 3.5`;
+        } else {
+            return res.status(400).json({ message: "不正な type です" });
+        }
+
+        const result = await geminiModel.generateContent(prompt);
+        const response = await result.response;
+        const answer = response.text().trim();
+
+        // 数値のみ抽出
+        const match = answer.match(/(\d+(\.\d+)?)/);
+        const value = match ? Number(match[0]) : null;
+
+        if (value === null) {
+            return res.status(500).json({ message: "推定できませんでした" });
+        }
+
+        res.json({ value });
+
+    } catch (err) {
+        console.error("AI Estimate Error:", err);
+        res.status(500).json({ message: "AI推定エラー: " + err.message });
+    }
+});
+
+// -----------------------------
 // ▼ 改善：AI搭載アドバイス生成 API
 // -----------------------------
 

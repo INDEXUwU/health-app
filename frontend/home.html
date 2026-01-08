@@ -435,7 +435,7 @@
             });
             observer.observe(document.documentElement, { attributes: true });
 
-            loadDashboard();
+            // loadDashboard(); // 初期ロードはTheme.init()による属性変更がトリガーするため不要
         </script>
 </body>
 

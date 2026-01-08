@@ -729,7 +729,7 @@ async function generateAIAdvice(data) {
         const net_calories = today_intake - today_burn;
         const weight_diff = current_weight && target_weight ? (current_weight - target_weight).toFixed(1) : "不明";
 
-        const prompt = `あなたは親切な健康アドバイザーです。以下のユーザーの健康データに基づいて、具体的で実行可能なアドバイスを3〜5個、日本語で提案してください。
+        const prompt = `あなたは親切な健康アドバイザーです。以下のユーザーの健康データに基づいて、**特に重要で効果的なアドバイスを厳選して3個**、日本語で提案してください。
 
 【ユーザーデータ】
 - 現在の体重: ${current_weight ? current_weight + ' kg' : '未記録'}
@@ -740,7 +740,7 @@ async function generateAIAdvice(data) {
 - カロリー収支: ${net_calories > 0 ? '+' : ''}${net_calories} kcal
 
 【アドバイスの条件】
-1. 3〜5個の具体的なアドバイスを箇条書きで提示してください
+1. **最も優先度の高い3個**のアドバイスを箇条書きで提示してください（必須）
 2. 各アドバイスは1〜2文で簡潔に
 3. 実行可能で前向きな提案を心がけてください
 4. 健康的で科学的に根拠のある内容にしてください
@@ -765,7 +765,7 @@ async function generateAIAdvice(data) {
                 // マーカーを除去してクリーンなテキストに
                 return line.replace(/^[\-\*]\s+/, '').replace(/^\d+\.\s+/, '').trim();
             })
-            .slice(0, 5); // 最大5個まで
+            .slice(0, 3); // 最大3個まで
 
         // 進捗情報を計算
         let progress = null;

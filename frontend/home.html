@@ -246,9 +246,12 @@
             let weightChart = null;
             let balanceChart = null;
 
+            // Global Data Cache
+            let cachedDashboardData = null;
+            let cachedWeightData = null;
+
             // Theme check for Chart.js
             const getChartTextColor = () => {
-                // Simple detection or use CSS var if supported in plugin
                 return document.documentElement.getAttribute('data-theme') === 'dark' ? '#eee' : '#666';
             };
 
@@ -256,79 +259,93 @@
                 return document.documentElement.getAttribute('data-theme') === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
             };
 
+            // Main entry point
             async function loadDashboard() {
                 const login_id = localStorage.getItem("login_id");
                 if (!login_id) return;
 
                 try {
-                    // 1. Get Advice & Today's Data
-                    const res = await fetch(`/api/advice/${login_id}`);
-                    const data = await res.json();
+                    // 1. Fetch Data
+                    const [adviceRes, weightRes] = await Promise.all([
+                        fetch(`/api/advice/${login_id}`),
+                        fetch(`/api/weights/${login_id}`)
+                    ]);
 
-                    if (!data.success) throw new Error("Failed to load");
+                    cachedDashboardData = await adviceRes.json();
+                    cachedWeightData = await weightRes.json();
 
-                    // Update UI
-                    document.getElementById("loadingAdvice").style.display = "none";
-                    document.getElementById("adviceContent").style.display = "block";
+                    if (!cachedDashboardData.success) throw new Error("Failed to load advice");
 
-                    // Stats
-                    document.getElementById("valIntake").textContent = `${data.today_intake} kcal`;
-                    document.getElementById("valBurn").textContent = `${data.today_burn} kcal`;
+                    // 2. Render DOM Elements (Advice, Stats, Progress)
+                    renderDomElements(cachedDashboardData);
 
-                    // Progress Bar
-                    if (data.progress) {
-                        const { current_weight, target_weight } = data.progress;
-                        document.getElementById("currentWeightText").textContent = `現在: ${current_weight} kg`;
-                        document.getElementById("targetWeightText").textContent = `目標: ${target_weight} kg`;
-
-                        const diff = current_weight - target_weight;
-                        const diffText = diff > 0 ? `あと ${diff.toFixed(1)}kg` : "目標達成！";
-                        document.getElementById("weightDiffText").textContent = diffText;
-
-                        if (diff <= 0) {
-                            document.getElementById("weightDiffText").style.color = "var(--success)";
-                        } else {
-                            document.getElementById("weightDiffText").style.color = "";
-                        }
-
-                        // Linear map: 10kg -> 0%, 0kg -> 100%
-                        let percent = diff <= 0 ? 100 : Math.max(5, Math.min(100, 100 - (diff * 10)));
-
-                        setTimeout(() => {
-                            const bar = document.getElementById("progressBar");
-                            if (bar) {
-                                bar.style.width = `${percent}%`;
-                                if (percent >= 100) bar.style.background = "var(--success)";
-                                else if (percent < 20) bar.style.background = "var(--warning)";
-                            }
-                        }, 100);
-                    }
-
-                    // Advice
-                    const list = document.getElementById("adviceList");
-                    list.innerHTML = "";
-                    // Fixed: API returns advice_text
-                    const adviceArr = data.advice_text || data.advice;
-                    if (adviceArr && Array.isArray(adviceArr)) {
-                        adviceArr.forEach(text => {
-                            const li = document.createElement("li");
-                            li.textContent = `💡 ${text}`;
-                            li.style.marginBottom = "8px";
-                            list.appendChild(li);
-                        });
-                    }
-
-                    // 2. Render Balance Chart (Today)
-                    renderBalanceChart(data.today_intake, data.today_burn);
-
-                    // 3. Get Weight History & Render Weight Chart
-                    const wRes = await fetch(`/api/weights/${login_id}`);
-                    const wData = await wRes.json();
-                    renderWeightChart(wData);
+                    // 3. Render Charts
+                    renderAllCharts();
 
                 } catch (err) {
                     console.error(err);
                     document.getElementById("loadingAdvice").textContent = "データの読み込みに失敗しました";
+                }
+            }
+
+            function renderDomElements(data) {
+                // Update UI
+                document.getElementById("loadingAdvice").style.display = "none";
+                document.getElementById("adviceContent").style.display = "block";
+
+                // Stats
+                document.getElementById("valIntake").textContent = `${data.today_intake} kcal`;
+                document.getElementById("valBurn").textContent = `${data.today_burn} kcal`;
+
+                // Progress Bar
+                if (data.progress) {
+                    const { current_weight, target_weight } = data.progress;
+                    document.getElementById("currentWeightText").textContent = `現在: ${current_weight} kg`;
+                    document.getElementById("targetWeightText").textContent = `目標: ${target_weight} kg`;
+
+                    const diff = current_weight - target_weight;
+                    const diffText = diff > 0 ? `あと ${diff.toFixed(1)}kg` : "目標達成！";
+                    document.getElementById("weightDiffText").textContent = diffText;
+
+                    if (diff <= 0) {
+                        document.getElementById("weightDiffText").style.color = "var(--success)";
+                    } else {
+                        document.getElementById("weightDiffText").style.color = "";
+                    }
+
+                    // Linear map: 10kg -> 0%, 0kg -> 100%
+                    let percent = diff <= 0 ? 100 : Math.max(5, Math.min(100, 100 - (diff * 10)));
+
+                    setTimeout(() => {
+                        const bar = document.getElementById("progressBar");
+                        if (bar) {
+                            bar.style.width = `${percent}%`;
+                            if (percent >= 100) bar.style.background = "var(--success)";
+                            else if (percent < 20) bar.style.background = "var(--warning)";
+                        }
+                    }, 100);
+                }
+
+                // Advice list
+                const list = document.getElementById("adviceList");
+                list.innerHTML = "";
+                const adviceArr = data.advice_text || data.advice;
+                if (adviceArr && Array.isArray(adviceArr)) {
+                    adviceArr.forEach(text => {
+                        const li = document.createElement("li");
+                        li.textContent = `💡 ${text}`;
+                        li.style.marginBottom = "8px";
+                        list.appendChild(li);
+                    });
+                }
+            }
+
+            function renderAllCharts() {
+                if (cachedDashboardData) {
+                    renderBalanceChart(cachedDashboardData.today_intake, cachedDashboardData.today_burn);
+                }
+                if (cachedWeightData) {
+                    renderWeightChart(cachedWeightData);
                 }
             }
 
@@ -344,7 +361,7 @@
                         labels: [`摂取: ${intake} kcal`, `消費: ${burn} kcal`],
                         datasets: [{
                             data: [intake, burn],
-                            backgroundColor: ['#FF7043', '#42A5F5'], // Intake (Orange), Burn (Blue)
+                            backgroundColor: ['#FF7043', '#42A5F5'],
                             borderWidth: 0,
                             hoverOffset: 4
                         }]
@@ -374,7 +391,6 @@
                 const ctx = document.getElementById("weightChart").getContext("2d");
                 if (weightChart) weightChart.destroy();
 
-                // Recent 14 records (~2 weeks)
                 const recent = weightData.slice(-14);
                 const labels = recent.map(d => new Date(d.record_date).toLocaleDateString());
                 const data = recent.map(d => d.weight);
@@ -389,7 +405,7 @@
                         datasets: [{
                             label: '体重 (kg)',
                             data: data,
-                            borderColor: '#66BB6A', // Green
+                            borderColor: '#66BB6A',
                             backgroundColor: 'rgba(102, 187, 106, 0.1)',
                             tension: 0.4,
                             fill: true,
@@ -416,7 +432,6 @@
                             y: {
                                 ticks: { color: textColor },
                                 grid: { color: gridColor, borderDash: [5, 5] },
-                                // Add some padding to Y axis
                                 suggestedMin: Math.min(...data) - 1.0,
                                 suggestedMax: Math.max(...data) + 1.0
                             }
@@ -425,17 +440,18 @@
                 });
             }
 
-            // Re-render when theme changes
+            // Re-render ONLY charts when theme changes (prevent data refetch)
             const observer = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
                     if (mutation.type === "attributes" && mutation.attributeName === "data-theme") {
-                        loadDashboard();
+                        renderAllCharts();
                     }
                 });
             });
             observer.observe(document.documentElement, { attributes: true });
 
-            // loadDashboard(); // 初期ロードはTheme.init()による属性変更がトリガーするため不要
+            // Initial Load
+            loadDashboard();
         </script>
 </body>
 

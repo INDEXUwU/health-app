@@ -50,3 +50,15 @@ CREATE TABLE IF NOT EXISTS login_history (
     login_datetime DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (login_id) REFERENCES users(login_id) ON DELETE CASCADE
 );
+
+-- Scheduled Exercises (Reminder)
+CREATE TABLE IF NOT EXISTS scheduled_exercises (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    login_id VARCHAR(191) NOT NULL,
+    exercise_name VARCHAR(255) NOT NULL,
+    scheduled_datetime DATETIME NOT NULL,
+    duration INT, -- expected duration in minutes
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (login_id) REFERENCES users(login_id) ON DELETE CASCADE
+);

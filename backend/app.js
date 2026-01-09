@@ -78,7 +78,9 @@ async function initDB() {
 
         // テーブル存在確認
         const [rows] = await db.query("SHOW TABLES LIKE 'users'");
-        if (rows.length === 0) {
+        const [schedRows] = await db.query("SHOW TABLES LIKE 'scheduled_exercises'");
+
+        if (rows.length === 0 || schedRows.length === 0) {
             console.log("テーブルが存在しません。schema.sql を実行して初期化します...");
             const schemaPath = path.join(__dirname, 'schema.sql');
             if (fs.existsSync(schemaPath)) {
@@ -1264,6 +1266,70 @@ app.post("/api/meal/ai", async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "AI食事登録に失敗しました" });
+    }
+});
+
+
+// -----------------------------
+// 運動予定（リマインダー）登録
+// -----------------------------
+app.post("/api/scheduled-exercises", async (req, res) => {
+    try {
+        const { login_id, exercise_name, scheduled_datetime, duration, notes } = req.body;
+
+        if (!login_id || !exercise_name || !scheduled_datetime)
+            return res.status(400).json({ message: "必須項目が不足しています" });
+
+        await db.query(
+            `INSERT INTO scheduled_exercises (login_id, exercise_name, scheduled_datetime, duration, notes, created_at)
+             VALUES (?, ?, ?, ?, ?, NOW())`,
+            [login_id, exercise_name, scheduled_datetime, duration || null, notes || null]
+        );
+
+        res.json({ message: "運動予定を登録しました" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "保存に失敗しました: " + err.message });
+    }
+});
+
+// -----------------------------
+// 運動予定 取得
+// -----------------------------
+app.get("/api/scheduled-exercises/:login_id", async (req, res) => {
+    try {
+        const { login_id } = req.params;
+
+        const [rows] = await db.query(
+            `SELECT id, exercise_name, DATE_FORMAT(scheduled_datetime, '%Y-%m-%d %H:%i') AS scheduled_datetime_str, scheduled_datetime, duration, notes
+             FROM scheduled_exercises
+             WHERE login_id = ?
+             ORDER BY scheduled_datetime ASC`,
+            [login_id]
+        );
+
+        res.json(rows);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "取得に失敗しました: " + err.message });
+    }
+});
+
+// -----------------------------
+// 運動予定 削除
+// -----------------------------
+app.delete("/api/scheduled-exercises/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        await db.query("DELETE FROM scheduled_exercises WHERE id = ?", [id]);
+        res.json({ message: "削除しました" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "削除に失敗しました: " + err.message });
     }
 });
 

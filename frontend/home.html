@@ -212,6 +212,17 @@
 
             <!-- Right Column: Graphs -->
             <div class="side-column">
+                <!-- Upcoming Schedule (New) -->
+                <div class="card mb-2" id="nextScheduleCard"
+                    style="display:none; border-left: 5px solid var(--primary);">
+                    <h3>📅 次の運動予定</h3>
+                    <div id="nextScheduleContent">
+                        <!-- Dynamic -->
+                    </div>
+                    <a href="schedule.html"
+                        style="display:block; text-align:right; font-size:0.8rem; margin-top:5px;">予定を管理 &rarr;</a>
+                </div>
+
                 <!-- Weight Trend -->
                 <div class="card mb-2">
                     <h3>体重の推移</h3>
@@ -266,18 +277,23 @@
 
                 try {
                     // 1. Fetch Data
-                    const [adviceRes, weightRes] = await Promise.all([
+                    const [adviceRes, weightRes, scheduleRes] = await Promise.all([
                         fetch(`/api/advice/${login_id}`),
-                        fetch(`/api/weights/${login_id}`)
+                        fetch(`/api/weights/${login_id}`),
+                        fetch(`/api/scheduled-exercises/${login_id}`)
                     ]);
 
                     cachedDashboardData = await adviceRes.json();
                     cachedWeightData = await weightRes.json();
+                    const scheduleData = await scheduleRes.json();
 
                     if (!cachedDashboardData.success) throw new Error("Failed to load advice");
 
                     // 2. Render DOM Elements (Advice, Stats, Progress)
                     renderDomElements(cachedDashboardData);
+
+                    // Render Next Schedule
+                    renderNextSchedule(scheduleData);
 
                     // 3. Render Charts
                     renderAllCharts();
@@ -285,6 +301,31 @@
                 } catch (err) {
                     console.error(err);
                     document.getElementById("loadingAdvice").textContent = "データの読み込みに失敗しました";
+                }
+            }
+
+            function renderNextSchedule(list) {
+                if (!list || list.length === 0) return;
+
+                // Filter for future only (simple client-side filter)
+                const now = new Date();
+                const future = list.filter(item => new Date(item.scheduled_datetime) > now);
+
+                if (future.length > 0) {
+                    const next = future[0]; // Already sorted by backend ASC
+                    const d = new Date(next.scheduled_datetime);
+                    const dateStr = `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${(d.getMinutes() < 10 ? '0' : '') + d.getMinutes()}`;
+
+                    const html = `
+                        <div style="font-size:1.1rem; font-weight:bold; color:var(--primary-dark);">
+                            ${next.exercise_name}
+                        </div>
+                        <div class="text-muted">
+                            ${dateStr} ${next.duration ? `(${next.duration}分)` : ''}
+                        </div>
+                    `;
+                    document.getElementById("nextScheduleContent").innerHTML = html;
+                    document.getElementById("nextScheduleCard").style.display = "block";
                 }
             }
 

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>運動予定｜健康管理アプリ</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- Shared -->
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .schedule-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .schedule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: var(--radius-sm);
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .schedule-item:hover {
+            transform: translateY(-2px);
+        }
+
+        [data-theme="dark"] .schedule-item {
+            background: rgba(60, 60, 80, 0.6);
+            border-left-color: var(--primary-light);
+        }
+
+        .schedule-info {
+            flex-grow: 1;
+        }
+
+        .schedule-time {
+            font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .schedule-name {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .schedule-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .btn-delete {
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .btn-delete:hover {
+            background: #d32f2f;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="js/components.js"></script>
+    <script>renderHeader("運動予定");</script>
+
+    <div class="container fade-in">
+        <div class="mb-2 text-center">
+            <h1>運動スケジューラー</h1>
+            <p class="text-muted">未来の運動を計画・リマインド</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Form -->
+            <div class="card">
+                <h3>新しい予定を追加</h3>
+                <div class="form-group">
+                    <label>日時 <span style="color:red">*</span></label>
+                    <input type="datetime-local" id="scheduled_datetime">
+                </div>
+                <div class="form-group">
+                    <label>運動名 <span style="color:red">*</span></label>
+                    <input type="text" id="exercise_name" placeholder="例: ジョギング">
+                </div>
+                <div class="form-group">
+                    <label>予定時間(分)</label>
+                    <input type="number" id="duration" placeholder="例: 30">
+                </div>
+                <div class="form-group">
+                    <label>メモ</label>
+                    <input type="text" id="notes" placeholder="例: 公園を2周する">
+                </div>
+                <button onclick="addSchedule()" class="btn btn-block">
+                    予定を登録する
+                </button>
+            </div>
+
+            <!-- List -->
+            <div class="card">
+                <h3>今後の予定</h3>
+                <div id="scheduleContainer">
+                    <p class="text-muted text-center" id="loadingMsg">読み込み中...</p>
+                    <ul class="schedule-list" id="scheduleList">
+                        <!-- Dynamic Content -->
+                    </ul>
+                    <p class="text-muted text-center" id="emptyMsg" style="display:none; margin-top:20px;">
+                        予定はありません
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const login_id = localStorage.getItem("login_id");
+
+        // Load on init
+        document.addEventListener("DOMContentLoaded", () => {
+            // Set default datetime to now + 1 hour (rounded to next hour)
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 60);
+            now.setMinutes(0, 0, 0);
+            // format: YYYY-MM-DDTHH:mm
+            const pad = (n) => n < 10 ? '0' + n : n;
+            const str = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            document.getElementById("scheduled_datetime").value = str;
+
+            loadSchedules();
+        });
+
+        async function addSchedule() {
+            const exercise_name = document.getElementById("exercise_name").value.trim();
+            const scheduled_datetime = document.getElementById("scheduled_datetime").value;
+            const duration = document.getElementById("duration").value;
+            const notes = document.getElementById("notes").value.trim();
+
+            if (!exercise_name || !scheduled_datetime) {
+                return Toast.show("日時と運動名は必須です", "error");
+            }
+
+            try {
+                const res = await fetch("/api/scheduled-exercises", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        login_id,
+                        exercise_name,
+                        scheduled_datetime,
+                        duration: duration ? parseInt(duration) : null,
+                        notes
+                    })
+                });
+
+                if (res.ok) {
+                    Toast.show("予定を登録しました！", "success");
+                    // Reset name but keep date or clear? Let's clear name and notes.
+                    document.getElementById("exercise_name").value = "";
+                    document.getElementById("duration").value = "";
+                    document.getElementById("notes").value = "";
+                    loadSchedules();
+                } else {
+                    const d = await res.json();
+                    Toast.show(d.message || "エラーが発生しました", "error");
+                }
+            } catch (e) {
+                console.error(e);
+                Toast.show("通信エラー", "error");
+            }
+        }
+
+        async function loadSchedules() {
+            const listEl = document.getElementById("scheduleList");
+            const loadingMsg = document.getElementById("loadingMsg");
+            const emptyMsg = document.getElementById("emptyMsg");
+
+            listEl.innerHTML = "";
+            loadingMsg.style.display = "block";
+            emptyMsg.style.display = "none";
+
+            try {
+                const res = await fetch(`/api/scheduled-exercises/${login_id}`);
+                if (!res.ok) throw new Error("Fetch failed");
+
+                const data = await res.json();
+                loadingMsg.style.display = "none";
+
+                if (data.length === 0) {
+                    emptyMsg.style.display = "block";
+                    return;
+                }
+
+                data.forEach(item => {
+                    const li = document.createElement("li");
+                    li.className = "schedule-item";
+
+                    // Format date nicely
+                    const d = new Date(item.scheduled_datetime);
+                    const dateStr = d.toLocaleDateString() + ` ${d.getHours()}:${(d.getMinutes() < 10 ? '0' : '') + d.getMinutes()}`;
+
+                    // Highlight if pending/future vs past? 
+                    // For now just list them all.
+
+                    const metaArr = [];
+                    if (item.duration) metaArr.push(`⏱ ${item.duration}分`);
+                    if (item.notes) metaArr.push(`📝 ${item.notes}`);
+
+                    li.innerHTML = `
+                        <div class="schedule-info">
+                            <span class="schedule-time">${dateStr}</span>
+                            <span class="schedule-name">${item.exercise_name}</span>
+                            <div class="schedule-meta">${metaArr.join(' &nbsp; ')}</div>
+                        </div>
+                        <button class="btn-delete" onclick="deleteSchedule(${item.id})">削除</button>
+                    `;
+                    listEl.appendChild(li);
+                });
+
+            } catch (e) {
+                console.error(e);
+                loadingMsg.textContent = "読み込みに失敗しました";
+            }
+        }
+
+        async function deleteSchedule(id) {
+            if (!confirm("この予定を削除しますか？")) return;
+
+            try {
+                const res = await fetch(`/api/scheduled-exercises/${id}`, {
+                    method: "DELETE"
+                });
+                if (res.ok) {
+                    Toast.show("削除しました", "success");
+                    loadSchedules();
+                } else {
+                    Toast.show("削除できませんでした", "error");
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+
+</html>

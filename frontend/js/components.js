@@ -8,6 +8,7 @@ const NAV_ITEMS = [
     { label: '食事', icon: '🍽️', href: 'record_meal.html' },
     { label: '運動', icon: '🏃', href: 'record_exercise.html' },
     { label: '体重', icon: '⚖️', href: 'record_weight.html' },
+    { label: '予定', icon: '📅', href: 'schedule.html' },
     { label: 'グラフ', icon: '📊', href: 'history.html' },
     { label: '設定', icon: '⚙️', href: 'user_info.html' },
 ];

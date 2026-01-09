@@ -44,7 +44,8 @@ app.use(express.static(path.join(__dirname, "../frontend"), {
 let dbOptions = {
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    dateStrings: true // 日付を文字列として取得（タイムゾーン変換によるズレを防止）
 };
 
 if (process.env.DATABASE_URL) {

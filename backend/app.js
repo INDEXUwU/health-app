@@ -321,31 +321,30 @@ app.get("/api/admin/login-history", async (req, res) => {
 // -----------------------------
 // 管理者用：統計データ取得
 // -----------------------------
-app.get("/api/admin/stats", async (req, res) => {
+// -----------------------------
+// 管理者用：ユーザー削除
+// -----------------------------
+app.delete("/api/admin/users/:user_id", async (req, res) => {
     try {
-        // 1. ユーザー数
-        const [userCount] = await db.query("SELECT COUNT(*) AS count FROM users WHERE login_id != 'Admin'");
+        const { user_id } = req.params;
 
-        // 2. 平均体重 (直近の記録) based on users table current weight
-        const [avgWeight] = await db.query("SELECT AVG(weight) AS val FROM users WHERE weight IS NOT NULL AND weight > 0");
+        // Adminユーザー自身の削除防止（IDチェック等はDB構造によるが、ここでは簡易的に）
+        // ※ 本来はセッションユーザーと対象ユーザーのチェックが必要
 
-        // 3. 平均摂取カロリー (全期間の1日平均)
-        // ユーザーごとの1日の平均を出し、その全体の平均をとる、あるいは単純に 全カロリー / 全日数
-        const [avgIntake] = await db.query(
-            "SELECT AVG(daily_sum) AS val FROM (SELECT SUM(calories) as daily_sum FROM meal_records GROUP BY login_id, DATE(meal_datetime)) as sub"
-        );
+        // ユーザーが存在するか確認
+        const [users] = await db.query("SELECT login_id FROM users WHERE user_id = ?", [user_id]);
+        if (users.length === 0) {
+            return res.status(404).json({ message: "ユーザーが見つかりません" });
+        }
 
-        // 4. 平均消費カロリー
-        const [avgBurn] = await db.query(
-            "SELECT AVG(daily_sum) AS val FROM (SELECT SUM(calories_burned) as daily_sum FROM exercise_records GROUP BY login_id, DATE(exercise_datetime)) as sub"
-        );
+        if (users[0].login_id === 'Admin') {
+            return res.status(403).json({ message: "管理者ユーザーは削除できません" });
+        }
 
-        res.json({
-            user_count: userCount[0].count,
-            avg_weight: avgWeight[0].val ? Number(avgWeight[0].val).toFixed(1) : 0,
-            avg_intake: avgIntake[0].val ? Math.round(avgIntake[0].val) : 0,
-            avg_burn: avgBurn[0].val ? Math.round(avgBurn[0].val) : 0
-        });
+        // 削除実行
+        await db.query("DELETE FROM users WHERE user_id = ?", [user_id]);
+
+        res.json({ message: "ユーザーを削除しました" });
 
     } catch (err) {
         console.error(err);

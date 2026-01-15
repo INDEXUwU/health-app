@@ -16,15 +16,42 @@
     <!-- Chart.js -->
     <script src="js/chart.umd.min.js" defer></script>
     <style>
+        /* Dashboard Bento Grid Layout */
         .dashboard-grid {
             display: grid;
-            gap: 20px;
             grid-template-columns: 1fr;
+            gap: 20px;
+            padding-bottom: 20px;
         }
 
+        /* PC Layout (3 Columns) */
         @media (min-width: 900px) {
             .dashboard-grid {
-                grid-template-columns: 2fr 1fr;
+                grid-template-columns: repeat(3, 1fr);
+                /* grid-template-rows: auto auto; -> Implicit is fine */
+                align-items: start;
+            }
+
+            .grid-item-advice {
+                grid-column: span 2;
+                grid-row: span 1;
+            }
+
+            .grid-item-schedule {
+                grid-column: span 1;
+                grid-row: span 1;
+                height: 100%;
+                /* Match height with advice card if possible, or just be auto */
+                display: flex;
+                flex-direction: column;
+            }
+
+            .grid-item-weight {
+                grid-column: span 2;
+            }
+
+            .grid-item-calorie {
+                grid-column: span 1;
             }
         }
 
@@ -167,79 +194,72 @@
         </div>
 
         <div class="dashboard-grid">
-            <!-- Left Column: Advice & Stats -->
-            <div class="main-column">
-                <!-- Advice Card -->
-                <div class="card advice-card">
-                    <h2>🌱 今日のアドバイス</h2>
-                    <div id="loadingAdvice">AI がデータを分析中...</div>
+            <!-- 1. Advice & Progress (Main Feature) -->
+            <div class="card grid-item-advice advice-card">
+                <h2>🌱 今日のアドバイス</h2>
+                <div id="loadingAdvice">AI がデータを分析中...</div>
 
-                    <div id="adviceContent" style="display:none;">
-                        <div class="stat-grid">
-                            <div class="stat-box">
-                                <div class="stat-label">今日の摂取</div>
-                                <div class="stat-val" id="valIntake">-- kcal</div>
-                            </div>
-                            <div class="stat-box">
-                                <div class="stat-label">今日の消費</div>
-                                <div class="stat-val" id="valBurn">-- kcal</div>
-                            </div>
+                <div id="adviceContent" style="display:none;">
+                    <div class="stat-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">今日の摂取</div>
+                            <div class="stat-val" id="valIntake">-- kcal</div>
                         </div>
+                        <div class="stat-box">
+                            <div class="stat-label">今日の消費</div>
+                            <div class="stat-val" id="valBurn">-- kcal</div>
+                        </div>
+                    </div>
 
-                        <div class="weight-meter-container">
-                            <div class="weight-meter-labels">
-                                <span class="text-muted" style="font-size: 0.9em;">目標まで</span>
-                                <span class="weight-remaining" id="weightDiffText">-- kg</span>
-                            </div>
-                            <!-- Meter -->
-                            <div class="progress-wrapper">
-                                <div class="progress-fill" id="progressBar"></div>
-                            </div>
-                            <div class="progress-footer">
-                                <span id="currentWeightText">現在: -- kg</span>
-                                <span id="targetWeightText">目標: -- kg</span>
-                            </div>
+                    <div class="weight-meter-container">
+                        <div class="weight-meter-labels">
+                            <span class="text-muted" style="font-size: 0.9em;">目標まで</span>
+                            <span class="weight-remaining" id="weightDiffText">-- kg</span>
                         </div>
+                        <!-- Meter -->
+                        <div class="progress-wrapper">
+                            <div class="progress-fill" id="progressBar"></div>
+                        </div>
+                        <div class="progress-footer">
+                            <span id="currentWeightText">現在: -- kg</span>
+                            <span id="targetWeightText">目標: -- kg</span>
+                        </div>
+                    </div>
 
-                        <div class="mt-2" style="background: rgba(255,255,255,0.3); padding:15px; border-radius:8px;">
-                            <ul id="adviceList" class="advice-list">
-                                <!-- AI Advice Text -->
-                            </ul>
-                        </div>
+                    <div class="mt-2" style="background: rgba(255,255,255,0.3); padding:15px; border-radius:8px;">
+                        <ul id="adviceList" class="advice-list">
+                            <!-- AI Advice Text -->
+                        </ul>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: Graphs -->
-            <div class="side-column">
-                <!-- Upcoming Schedule (New) -->
-                <div class="card mb-2" id="nextScheduleCard"
-                    style="display:none; border-left: 5px solid var(--primary);">
-                    <h3>📅 次の運動予定</h3>
-                    <div id="nextScheduleContent">
-                        <!-- Dynamic -->
-                    </div>
-                    <a href="schedule.html"
-                        style="display:block; text-align:right; font-size:0.8rem; margin-top:5px;">予定を管理 &rarr;</a>
+            <!-- 2. Next Schedule (Actionable) -->
+            <div class="card grid-item-schedule" id="nextScheduleCard"
+                style="display:none; border-left: 5px solid var(--primary);">
+                <h3>📅 次の運動予定</h3>
+                <div id="nextScheduleContent">
+                    <!-- Dynamic -->
                 </div>
-
-                <!-- Weight Trend -->
-                <div class="card mb-2">
-                    <h3>体重の推移</h3>
-                    <div style="position:relative; height:200px; width:100%;">
-                        <canvas id="weightChart"></canvas>
-                    </div>
+                <div style="margin-top:auto; pt-2 text-right">
+                    <a href="schedule.html" style="font-size:0.8rem; display:inline-block; margin-top:10px;">予定を管理
+                        &rarr;</a>
                 </div>
+            </div>
 
-                <!-- Calorie Balance -->
-                <div class="card">
-                    <!-- Calorie Balance -->
-                    <div class="card">
-                        <h3>今日の摂取・消費カロリー</h3>
-                        <div style="position:relative; height:200px; width:100%;">
-                            <canvas id="balanceChart"></canvas>
-                        </div>
-                    </div>
+            <!-- 3. Weight Chart (Trend) -->
+            <div class="card grid-item-weight">
+                <h3>体重の推移</h3>
+                <div style="position:relative; height:200px; width:100%;">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 4. Calorie Balance Chart (Detail) -->
+            <div class="card grid-item-calorie">
+                <h3>今日の摂取・消費カロリー</h3>
+                <div style="position:relative; height:200px; width:100%;">
+                    <canvas id="balanceChart"></canvas>
                 </div>
             </div>
         </div>

@@ -242,7 +242,8 @@
         }
 
         async function deleteSchedule(id) {
-            if (!confirm("この予定を削除しますか？")) return;
+            const isConfirmed = await Modal.confirm("この予定を削除しますか？", "確認", { type: 'danger', okText: '削除' });
+            if (!isConfirmed) return;
 
             try {
                 const res = await fetch(`/api/scheduled-exercises/${id}`, {

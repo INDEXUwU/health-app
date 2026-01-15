@@ -199,21 +199,29 @@
     <script src="js/components.js"></script>
     <script>
         // Auth Check
-        const loginId = localStorage.getItem("login_id");
-        if (loginId !== "Admin") {
-            alert("管理者権限がありません。");
-            window.location.href = "admin_login.html";
-        }
-
-        // Logout
-        document.getElementById("logoutBtn").addEventListener("click", () => {
-            if (confirm("ログアウトしますか？")) {
-                localStorage.removeItem("login_id");
-                localStorage.removeItem("userName");
-                localStorage.removeItem("isAdmin");
+        // Auth Check & Logout Logic
+        (async () => {
+            const loginId = localStorage.getItem("login_id");
+            if (loginId !== "Admin") {
+                await Modal.alert("管理者権限がありません。", "アクセス拒否");
                 window.location.href = "admin_login.html";
+                return;
             }
-        });
+
+            // Initial Load only if auth passed
+            loadAll();
+
+            // Logout
+            document.getElementById("logoutBtn").addEventListener("click", async () => {
+                const result = await Modal.confirm("ログアウトしますか？", "確認", { okText: "ログアウト" });
+                if (result) {
+                    localStorage.removeItem("login_id");
+                    localStorage.removeItem("userName");
+                    localStorage.removeItem("isAdmin");
+                    window.location.href = "admin_login.html";
+                }
+            });
+        })();
 
         // Tabs
         function switchTab(tabName) {
@@ -268,9 +276,12 @@
 
         // Delete User
         async function deleteUser(userId, userName) {
-            if (!confirm(`本当にユーザー「${userName}」を削除しますか？\nこの操作は取り消せません。`)) {
-                return;
-            }
+            const result = await Modal.confirm(`本当にユーザー「${userName}」を削除しますか？\nこの操作は取り消せません。`, "ユーザー削除", {
+                type: 'danger',
+                okText: '削除'
+            });
+
+            if (!result) return;
 
             try {
                 const res = await fetch(`/api/admin/users/${userId}`, {
@@ -332,7 +343,8 @@
         }
 
         // Initial Load
-        loadAll();
+        // Initial Load
+        // loadAll(); // Called after auth check
     </script>
 </body>
 

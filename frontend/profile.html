@@ -82,15 +82,22 @@
         renderHeader("プロフィール");
 
         const userName = localStorage.getItem("userName");
-        if (!userName) {
-            alert("ログイン情報がありません。ログインし直してください。");
-            window.location.href = "login.html";
-        }
+
+        // Immediate check wrapped in async function to allow await
+        (async () => {
+            if (!userName) {
+                await Modal.alert("ログイン情報がありません。ログインし直してください。", "エラー");
+                window.location.href = "login.html";
+            } else {
+                // If logged in, load profile
+                loadProfile();
+            }
+        })();
 
         const form = document.getElementById("profileForm");
         const messageBox = document.getElementById("messageBox");
 
-        // 泙 繝励Ο繝輔ぅ繝ｼ繝ｫ諠・�ｱ縺ｮ蜿門ｾ・
+        // --- プロフィール情報の取得 ---
         async function loadProfile() {
             try {
                 const response = await fetch(`/api/profile?userName=${userName}`);
@@ -150,7 +157,7 @@
             }
         });
 
-        loadProfile();
+
     </script>
 </body>
 

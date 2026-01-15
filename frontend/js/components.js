@@ -61,11 +61,151 @@ const Auth = {
             window.location.href = 'login.html';
         }
     },
-    logout: () => {
-        if (confirm('ログアウトしますか？')) {
+    logout: async () => {
+        const result = await Modal.confirm('ログアウトしますか？', '確認', {
+            okText: 'ログアウト',
+            okType: 'danger' // Use danger style for logout to be consistent or maybe just primary? Let's use primary as it's not destructive per se, but user used danger in concept. Actually, let's keep it neutral or primary. But wait, plan says "danger" for deletion. Logout is usually neutral. Let's use primary for logout.
+            // Wait, looking at the image in the prompt, there is a dark styled popup.
+            // Let's stick to the plan.
+        });
+
+        if (result) {
             localStorage.clear();
             window.location.href = 'login.html';
         }
+    }
+};
+
+/**
+ * Custom Modal Component
+ * Replaces native alert/confirm
+ */
+const Modal = {
+    /**
+     * Show a confirmation modal
+     * @param {string} message 
+     * @param {string} title 
+     * @param {object} options { okText, cancelText, type: 'default'|'danger' }
+     * @returns {Promise<boolean>} true if OK, false if Cancel
+     */
+    confirm: (message, title = '確認', options = {}) => {
+        return new Promise((resolve) => {
+            const { okText = 'OK', cancelText = 'キャンセル', type = 'default' } = options;
+
+            // Create elements
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+
+            const container = document.createElement('div');
+            container.className = 'modal-container';
+
+            // Determine button class based on type
+            const okBtnClass = type === 'danger' ? 'modal-btn modal-btn-danger' : 'modal-btn modal-btn-ok';
+
+            container.innerHTML = `
+                <div class="modal-title">${title}</div>
+                <div class="modal-message">${message.replace(/\n/g, '<br>')}</div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-cancel" id="modal-cancel-btn">${cancelText}</button>
+                    <button class="${okBtnClass}" id="modal-ok-btn">${okText}</button>
+                </div>
+            `;
+
+            overlay.appendChild(container);
+            document.body.appendChild(overlay);
+
+            // Animation start
+            requestAnimationFrame(() => {
+                overlay.classList.add('active');
+            });
+
+            // Handlers
+            const close = (result) => {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    if (document.body.contains(overlay)) {
+                        document.body.removeChild(overlay);
+                    }
+                    resolve(result);
+                }, 300); // Match transition duration
+            };
+
+            document.getElementById('modal-cancel-btn').onclick = () => close(false);
+            const okBtn = document.getElementById('modal-ok-btn');
+            okBtn.onclick = () => close(true);
+            okBtn.focus(); // Focus on OK for accessibility
+
+            // Close on click outside (optional, good UX)
+            overlay.onclick = (e) => {
+                if (e.target === overlay) close(false);
+            };
+
+            // Handle Escape key
+            const keyHandler = (e) => {
+                if (e.key === 'Escape') {
+                    document.removeEventListener('keydown', keyHandler);
+                    close(false);
+                }
+            };
+            document.addEventListener('keydown', keyHandler);
+        });
+    },
+
+    /**
+     * Show an alert modal
+     * @param {string} message 
+     * @param {string} title 
+     * @returns {Promise<void>}
+     */
+    alert: (message, title = 'お知らせ') => {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+
+            const container = document.createElement('div');
+            container.className = 'modal-container';
+
+            container.innerHTML = `
+                <div class="modal-title">${title}</div>
+                <div class="modal-message">${message.replace(/\n/g, '<br>')}</div>
+                <div class="modal-actions">
+                    <button class="modal-btn modal-btn-ok" id="modal-ok-btn">OK</button>
+                </div>
+            `;
+
+            overlay.appendChild(container);
+            document.body.appendChild(overlay);
+
+            requestAnimationFrame(() => {
+                overlay.classList.add('active');
+            });
+
+            const close = () => {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    if (document.body.contains(overlay)) {
+                        document.body.removeChild(overlay);
+                    }
+                    resolve();
+                }, 300);
+            };
+
+            const okBtn = document.getElementById('modal-ok-btn');
+            okBtn.onclick = close;
+            okBtn.focus();
+
+            overlay.onclick = (e) => {
+                if (e.target === overlay) close();
+            };
+
+            const keyHandler = (e) => {
+                if (e.key === 'Escape') {
+                    document.removeEventListener('keydown', keyHandler);
+                    close();
+                }
+            };
+            document.addEventListener('keydown', keyHandler);
+        });
     }
 };
 

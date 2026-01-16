@@ -316,7 +316,7 @@
                 }
 
                 history.forEach(rec => {
-                    const date = new Date(rec.login_datetime).toLocaleString("ja-JP");
+                    const date = new Date(rec.login_ts * 1000).toLocaleString("ja-JP");
 
                     const tr = document.createElement("tr");
                     tr.innerHTML = `

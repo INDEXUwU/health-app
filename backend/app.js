@@ -305,7 +305,7 @@ app.get("/api/admin/users", async (req, res) => {
 app.get("/api/admin/login-history", async (req, res) => {
     try {
         const [rows] = await db.query(
-            `SELECT h.id, h.login_id, u.name, h.login_datetime 
+            `SELECT h.id, h.login_id, u.name, UNIX_TIMESTAMP(h.login_datetime) AS login_ts
              FROM login_history h
              LEFT JOIN users u ON h.login_id = u.login_id
              ORDER BY h.login_datetime DESC

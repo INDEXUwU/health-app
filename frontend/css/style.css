@@ -61,6 +61,11 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+html {
+    background: var(--bg-gradient);
+    min-height: 100vh;
+}
+
 body {
     font-family: 'Poppins', 'Noto Sans JP', sans-serif;
     background: var(--bg-gradient);

@@ -366,6 +366,13 @@
                     const dateStr = `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${(d.getMinutes() < 10 ? '0' : '') + d.getMinutes()}`;
 
                     const html = `
+                        <div style="padding: 15px; background: rgba(var(--primary-rgb), 0.05); border-radius: 8px; border-left: 4px solid var(--primary);">
+                            <div style="font-weight: bold; color: var(--primary-dark); font-size: 1.1rem; margin-bottom: 5px;">${next.exercise_name}</div>
+                            <div class="text-muted" style="font-size: 0.95rem; display: flex; align-items: center; gap: 5px;">
+                                <span>🕒</span> ${dateStr}
+                            </div>
+                            ${next.notes ? `<div style="font-size: 0.85rem; margin-top: 8px; color: #666; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 5px;">${next.notes}</div>` : ''}
+                        </div>
                     `;
                     document.getElementById("nextScheduleContent").innerHTML = html;
                     // document.getElementById("nextScheduleCard").style.display = "block"; // Always shown now

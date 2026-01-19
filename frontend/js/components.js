@@ -4,13 +4,13 @@
 
 // --- Navigation Config ---
 const NAV_ITEMS = [
-    { label: 'ホーム', icon: '🏠', href: 'home.html' },
-    { label: '食事', icon: '🍽️', href: 'record_meal.html' },
-    { label: '運動', icon: '🏃', href: 'record_exercise.html' },
-    { label: '体重', icon: '⚖️', href: 'record_weight.html' },
-    { label: '予定', icon: '📅', href: 'schedule.html' },
-    { label: 'グラフ', icon: '📊', href: 'history.html' },
-    { label: '設定', icon: '⚙️', href: 'user_info.html' },
+    { label: 'ホーム', icon: '', href: 'home.html' },
+    { label: '食事', icon: '', href: 'record_meal.html' },
+    { label: '運動', icon: '', href: 'record_exercise.html' },
+    { label: '体重', icon: '', href: 'record_weight.html' },
+    { label: '予定', icon: '', href: 'schedule.html' },
+    { label: 'グラフ', icon: '', href: 'history.html' },
+    { label: '設定', icon: '', href: 'user_info.html' },
 ];
 
 /**
@@ -25,7 +25,7 @@ function renderHeader(pageTitle) {
     <header class="app-header">
         <div class="header-inner" style="display:contents; width:100%;">
             <a href="home.html" class="app-logo">
-                <span>🍀</span> 健康管理アプリ
+                <span></span> 健康管理アプリ
             </a>
             
             <!-- Desktop Nav -->
@@ -37,7 +37,7 @@ function renderHeader(pageTitle) {
                     </a>
                 `).join('')}
                 <a href="#" onclick="Auth.logout()" class="nav-item">
-                    <span class="nav-icon">🚪</span>
+                    <span class="nav-icon"></span>
                     <span class="nav-label">ログアウト</span>
                 </a>
             </nav>
@@ -263,7 +263,7 @@ const Theme = {
         const button = document.querySelector('.theme-toggle');
         if (!button) return;
         const theme = document.documentElement.getAttribute('data-theme');
-        button.textContent = theme === 'dark' ? '☀️' : '🌙';
+        button.textContent = theme === 'dark' ? 'Light' : 'Dark';
     }
 };
 

@@ -196,7 +196,7 @@
         <div class="dashboard-grid">
             <!-- 1. Advice & Progress (Main Feature) -->
             <div class="card grid-item-advice advice-card">
-                <h2>🌱 今日のアドバイス</h2>
+                <h2>今日のアドバイス</h2>
                 <div id="loadingAdvice">AI がデータを分析中...</div>
 
                 <div id="adviceContent" style="display:none;">
@@ -236,7 +236,7 @@
 
             <!-- 2. Next Schedule & Tools -->
             <div class="card grid-item-schedule" id="nextScheduleCard" style="border-left: 5px solid var(--primary);">
-                <h3>📅 次の運動予定</h3>
+                <h3>次の運動予定</h3>
                 <div id="nextScheduleContent">
                     <p class="text-muted" style="font-size:0.9rem;">予定はありません</p>
                 </div>
@@ -369,7 +369,7 @@
                         <div style="padding: 15px; background: rgba(var(--primary-rgb), 0.05); border-radius: 8px; border-left: 4px solid var(--primary);">
                             <div style="font-weight: bold; color: var(--primary-dark); font-size: 1.1rem; margin-bottom: 5px;">${next.exercise_name}</div>
                             <div class="text-muted" style="font-size: 0.95rem; display: flex; align-items: center; gap: 5px;">
-                                <span>🕒</span> ${dateStr}
+                                <span></span> ${dateStr}
                             </div>
                             ${next.notes ? `<div style="font-size: 0.85rem; margin-top: 8px; color: #666; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 5px;">${next.notes}</div>` : ''}
                         </div>
@@ -424,7 +424,7 @@
                 if (adviceArr && Array.isArray(adviceArr)) {
                     adviceArr.forEach(text => {
                         const li = document.createElement("li");
-                        li.textContent = `💡 ${text}`;
+                        li.textContent = `${text}`;
                         li.style.marginBottom = "8px";
                         list.appendChild(li);
                     });

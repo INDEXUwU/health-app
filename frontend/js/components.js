@@ -263,7 +263,7 @@ const Theme = {
         const button = document.querySelector('.theme-toggle');
         if (!button) return;
         const theme = document.documentElement.getAttribute('data-theme');
-        button.textContent = theme === 'dark' ? 'Light' : 'Dark';
+        button.textContent = theme === 'dark' ? '☀️' : '🌙';
     }
 };
 

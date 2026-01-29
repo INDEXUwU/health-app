@@ -424,7 +424,17 @@
                 if (adviceArr && Array.isArray(adviceArr)) {
                     adviceArr.forEach(text => {
                         const li = document.createElement("li");
-                        li.textContent = `${text}`;
+                        // 1. Escape HTML to prevent XSS
+                        let safeText = text.replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/>/g, "&gt;")
+                            .replace(/"/g, "&quot;")
+                            .replace(/'/g, "&#039;");
+
+                        // 2. Parse Markdown Bold (**text**) to <strong>text</strong>
+                        const formattedText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+                        li.innerHTML = formattedText;
                         li.style.marginBottom = "8px";
                         list.appendChild(li);
                     });

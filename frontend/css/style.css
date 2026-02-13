@@ -180,6 +180,7 @@ label {
 input,
 select,
 textarea {
+    box-sizing: border-box;
     width: 100%;
     max-width: 100%;
     padding: 12px 16px;
